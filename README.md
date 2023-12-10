@@ -1,12 +1,23 @@
-Syntactic sugars:
+# Interpreter for While<sup>+</sup> language 
+
+A rust implementation of an interpreter for while<sup>+</sup> language for the Software Verification course at UniPD
+
+The while<sup>+</sup> language add some syntactic sugar over while, namely:
 - For loops
 - Repeat until loop
-- Increase statement
-- Decrease statement
-- Boolean ops: <,>,>=, !=
+- Increase/Decrease statement
+- Boolean ops: `<`,`>`,`>=`, `!=`
+## How to use
 
-# Grammar
+To use the interpreter the command is simply: `cargo run <filename>`.
 
+And using `--state` is possible to add initial states to the interpreter, for example:
+```
+cargo run examples/gcd --state a:222,b:3553
+```
+
+
+## Grammar of While<sup>+</sup> 
 Only `Statements` is terminal
 
 ```
@@ -52,3 +63,8 @@ BexprAtomic ::= "true" | "false"
 Num ::= [0-9]+
 Var ::= (a-z | A-Z)[a-z | A-Z | 0-9]*
 ```
+
+## Implementation of while loop
+By the assignment the semantics of the while loop (the only one) must rely on Kleene-Knaster-Tarski fixpoint iteration sequence.
+
+But since Rust language is not so functional-like the naive implementation is not the best. So I implemented it in a not naive method that is equivalent to the naive one by [this demonstration](demonstration.md)

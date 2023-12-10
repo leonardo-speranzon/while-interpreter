@@ -1,8 +1,10 @@
-Proposition: 
+
+## Proposition 
 $$
-(F^k\bot) s = undef \implies  \\
-(F^{k+1}\bot) s  = (F\bot \circ S[\![stm]\!]^k)s  = F\bot (S[\![stm]\!]^ks) \\
-\forall s \in State, k\ge 1
+(F^k\bot) s = undef \implies  
+(F^{k+1}\bot) s  = (F\bot \circ S[\![stm]\!]^k)s 
+%  = F\bot (S[\![stm]\!]^ks) 
+\\ \forall s \in State, k\ge 1
 $$
 ## Lemma 1
 First we prove a useful lemma: $(F\bot) s = undef \implies  B[\![b]\!]s = tt$
@@ -18,7 +20,7 @@ $$
         \bot s  & \text{if $B[\![b]\!]s = tt$}\\
         id\ s & \text{if $B[\![b]\!]s = ff$}
     \end{cases}
-\\ & = id\ s \ne undef &\text{CONTRADDICTION} &&& \square
+\\ & = id\ s \ne undef &\text{CONTRADICTION} &&& \square
 
 \end{aligned}
 $$
@@ -75,7 +77,7 @@ $$
     \end{cases} \\
     & = ((F^{k+1}\bot) \circ S[\![stm]\!])s & \text{(by lemma1)} \\
     & = (F^{k+1}\bot)(S[\![stm]\!]s) \\
-    & = (F\bot \circ S[\![stm]\!]^k)(S[\![stm]\!]s) & \text{(by inductive hypothesys* on $s'=S[\![stm]\!]s$)}\\
+    & = (F\bot \circ S[\![stm]\!]^k)(S[\![stm]\!]s) & \text{(by inductive hypothesis* on $s'=S[\![stm]\!]s$)}\\
     & = (F\bot \circ S[\![stm]\!]^k \circ S[\![stm]\!])s \\
     & = (F\bot \circ S[\![stm]\!]^{k+1})s & \square\\
 \end{aligned}
