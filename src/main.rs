@@ -1,62 +1,26 @@
-
-
 use std::{fs::File, env::Args};
-
-use interpreter::types::{RuntimeError, State};
-
-use crate::{parser::{types::ParserError, parse_string, parse_file}, interpreter::interpreter::eval_statement, ast::Num};
-
+use interpreter::{types::{RuntimeError, State}, interpreter::eval_statement};
+use parser::{types::ParserError, parse_string, parse_file};
+use ast::Num;
 
 mod ast;
 mod ast_printer;
 mod interpreter;
 mod parser;
-#[allow(unused_variables)]
+mod examples;
 fn main() {
-    // env::set_var("RUST_BACKTRACE", "1");
-    //TODO -> add curly braces
-    // let code = "x:= 55; y:= 5; z:= x + 2 + y";
-    // let code = "x:= 55; while (5 + 4) = 5 - 3 do {x:=x+5;skip};skip;skip";
-    // let code = "x:= 55; while (5 + 4) = 5 - 3 do {x:=x+5;skip};if(x<=22)and(55=3)then skip else skip;skip";
-    // let code = "if true then if false then x:=1 else x:=2;y:=22 else x:=3";
-    // let code = "if (not false and true) then skip else skip";
-    let factorial = "y:=25;x:=1;while(not(y=0)) do {x:=x*y;y:=y-1;}";
-    let long_loop = "y:=1000000;x:=1;while(not(y=0)) do {x:=x+y;y:=y-1;}";
-    let infinite_loop = "while true do skip;"; 
-    let while_false = "x:=1;while false do x:=2;";
-    let inner_loop = r#"
-        x:=0; y:=1;
-        while x<=1000 do {
-            x:=x+10;
-            while (y<=10) do
-                y:=y+1;
-            y:=y*2;
-        }"#;
-    let gcd = r#"
-        n1 := 814324; n2 := 1532;
-        while (not n1 = n2) do 
-            if n1 <= n2 then 
-                n2:= n2 - n1;
-            else
-                n1:= n1 - n2;
-        gcd:=n1;
-    "#;
-    let test_repeat_until = r#"
-        x:=1023;
-        repeat x-=110; until x<333;
-    "#;
-    let test_for_loop = r#"
-        y:=1;
-        for(x:=1; x<=500000; x:=x+1){
-            y:=y+x;
-        }
-    "#;
-    let code = test_repeat_until; 
+    
+    let code = examples::TEST_REPEAT_UNTIL; 
 
     let config = match Config::new(std::env::args())  {
         Ok(c) => c,
         Err(err) => panic!("{}", err),
     };
+    std::env::set_var("print-cst", config.print_cst.to_string());
+    std::env::set_var("print-ast", config.print_ast.to_string());
+    std::env::set_var("print-pretty-cst", config.print_pretty_cst.to_string());
+    std::env::set_var("print-pretty-ast", config.print_pretty_ast.to_string());
+    
     
     let ast = match config.filename {
         Some(filename) => {
@@ -105,7 +69,11 @@ fn main() {
 #[derive(Debug)]
 struct Config{
     filename: Option<String>,
-    init_state: Option<State>
+    init_state: Option<State>,
+    print_cst: bool,
+    print_pretty_cst: bool,
+    print_ast: bool,
+    print_pretty_ast: bool,
 }
 
 impl Config {
@@ -113,14 +81,24 @@ impl Config {
         
         args.next(); 
 
-        let mut conf = Config{filename:None, init_state: None};
+        let mut conf = Config{
+            filename:None,
+            init_state: None,
+            print_cst: false,
+            print_pretty_cst:false,
+            print_ast: false,
+            print_pretty_ast:false,
+        };
         while let Some(s) = args.next() {
             match s.as_str() {
                 "--state" => {
                     if conf.init_state.is_some() {
                         return Err("Unexpected --state: states already set".to_string())
                     }
-                    let str_state = args.next().unwrap();
+                    let str_state = match args.next() {
+                        Some(s) => s,
+                        None => return Err("Empty --state argument".to_string()),
+                    };
                     let state = str_state
                         .split(',')
                         .map(|pair_str|{
@@ -140,11 +118,15 @@ impl Config {
                     }
                     
                 },
+                "-a" | "--print-ast" => conf.print_ast = true,
+                "-c" | "--print-cst" => conf.print_cst = true,
+                "-A" => conf.print_pretty_ast = true,
+                "-C" => conf.print_pretty_cst = true,
                 _ if !s.starts_with('-') && conf.filename.is_none() => conf.filename = Some(s),
                 _ => return Err(format!("Unexpected arg: '{s}'"))
             }
         }
-        println!("{:?}",conf);
+        // println!("{:?}",conf);
         Ok(conf)
 
 

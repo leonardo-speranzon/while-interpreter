@@ -52,9 +52,14 @@ fn parse(lexer: impl Lexer)-> Result<Statement,ParserError>{
     let cst_parser = ConcreteParser::new(lexer);
     let cst = cst_parser.parse()?;
 
-    if DEBUG {
+    if std::env::var("print-cst").is_ok_and(|s|s=="true") {
         println!("Raw CST:");
         println!("{:?}", &cst);
+        println!("==============================");
+    }
+    if std::env::var("print-pretty-cst").is_ok_and(|s|s=="true") {
+        println!("Pretty CST:");
+        todo!();
         println!("==============================");
     }
 
@@ -62,11 +67,13 @@ fn parse(lexer: impl Lexer)-> Result<Statement,ParserError>{
     let ast = abstract_parse(&cst);
 
 
-    if DEBUG {
+    if std::env::var("print-ast").is_ok_and(|s|s=="true") {
         println!("Raw AST:");
         println!("{:?}", &ast);
         println!("==============================");
-        println!("AST:");
+    }
+    if std::env::var("print-pretty-ast").is_ok_and(|s|s=="true") {
+        println!("Pretty AST:");
         println!("{}", &ast);
         println!("==============================");
     }

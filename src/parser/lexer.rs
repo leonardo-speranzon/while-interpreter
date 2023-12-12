@@ -81,6 +81,7 @@ impl<'a> From<&'a str> for MyLexer<'a>{
             chars: b.peekable(),
         };
         
+        //FIXME
         lex.peek = lex.scan().unwrap();
         return lex;
     }
@@ -90,6 +91,7 @@ impl<'a> From<File> for MyLexer<'a> {
         let reader = BufReader::new(value);
         let it = reader.lines().enumerate()
         .map(|(i,line)| 
+            //FIXME
             line.unwrap().chars()
                 .enumerate()
                 .map(move |(j, c)|(i+1,j+1,c)).collect::<Vec<_>>()
@@ -101,6 +103,7 @@ impl<'a> From<File> for MyLexer<'a> {
             chars: b.peekable(),
         };
         
+        //FIXME
         lex.peek = lex.scan().unwrap();
         return lex;
     }
@@ -160,7 +163,7 @@ impl<'a> MyLexer<'a>{
             },
             Some((_, _, d@'0'..='9')) => {
                 let mut digits = d.to_string();
-                while let Some((_, _, d)) = self.chars.next_if(|(_, _, c)| ('0'..='9').contains(c)){
+                while let Some((_, _, d)) = self.chars.next_if(|(_, _, c)| c.is_ascii_digit()){
                     digits.push(d)
                 }
                 Token::Num((digits).parse().unwrap())//By construction should be valid                
