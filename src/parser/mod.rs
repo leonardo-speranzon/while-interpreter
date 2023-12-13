@@ -58,9 +58,10 @@ fn parse(lexer: impl Lexer)-> Result<Statement,ParserError>{
         println!("==============================");
     }
     if std::env::var("print-pretty-cst").is_ok_and(|s|s=="true") {
-        println!("Pretty CST:");
         todo!();
-        println!("==============================");
+        // println!("Pretty CST:");
+        // println!("{}", &cst);
+        // println!("==============================");
     }
 
 

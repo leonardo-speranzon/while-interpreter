@@ -76,11 +76,16 @@ impl Config {
     pub fn new() -> Config{
         let matches = Command::new("While Interprer")
             .arg(Arg::new("filename"))
-            .arg(Arg::new("state")     .long("state").value_parser(parse_state))
-            .arg(Arg::new("ast")       .long("ast")       .short('a').action(ArgAction::SetTrue))
-            .arg(Arg::new("pretty-ast").long("pretty-ast").short('A').action(ArgAction::SetTrue))
-            .arg(Arg::new("cst")       .long("cst")       .short('c').action(ArgAction::SetTrue))
-            .arg(Arg::new("pretty-cst").long("pretty-cst").short('C').action(ArgAction::SetTrue))
+            .arg(Arg::new("state")     
+                .long("state")
+                // .help("BOH provaaaa")
+                .help("Set initial state, must be in format <var-name>:<value>,<var-name>:<value>,...")
+                // .long_help("Set initial state, must be in format <var-name>:<value>,<var-name>:<value>,...")
+                .value_parser(parse_state))
+            .arg(Arg::new("ast")       .long("ast")       .short('a').help("Print raw ast")   .action(ArgAction::SetTrue))
+            .arg(Arg::new("pretty-ast").long("pretty-ast").short('A').help("Print pretty ast").action(ArgAction::SetTrue))
+            .arg(Arg::new("cst")       .long("cst")       .short('c').help("Print raw ast")   .action(ArgAction::SetTrue))
+            .arg(Arg::new("pretty-cst").long("pretty-cst").short('C').help("Print pretty ast").action(ArgAction::SetTrue))
             .get_matches();
         
         Config{
