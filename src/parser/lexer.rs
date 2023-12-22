@@ -54,7 +54,6 @@ pub enum Token {
 
 pub trait Lexer {
     fn peek(&self) -> Option<Token>;
-    fn next(&mut self) -> Result<Option<Token>, ParserError>;
     fn match_next(&mut self, tok: Token)-> Result<(),ParserError>;
     fn unexpected_error(&self) -> ParserError;
 }
@@ -174,7 +173,6 @@ impl<'a> MyLexer<'a>{
             }),
             None => return Ok(None),
         };
-        // println!("{:?}",&tok);
         return Ok(Some((start_pos.unwrap(), tok)));
     }
 }
@@ -185,11 +183,7 @@ impl<'a> Lexer for MyLexer<'a> {
     fn peek(&self) -> Option<Token> {
         self.peek.clone().map(|(_,t)|t)
     }
-    fn next(&mut self) -> Result<Option<Token>, ParserError> {
-        let tok: Option<((usize, usize), Token)> = self.peek.clone();
-        self.peek = self.scan()?;
-        return Ok(tok.map(|(_,t)|t))
-    }
+    
     fn match_next(&mut self, tok: Token)-> Result<(),ParserError> { 
         match &self.peek {
             Some((pos, tok2)) => {
@@ -202,6 +196,9 @@ impl<'a> Lexer for MyLexer<'a> {
                 }
             }
             None => return Err(ParserError::UnexpectedEOF),
+        }
+        if std::env::var("print-token").is_ok_and(|s|s=="true") {
+            print!("{:?} ", self.peek.as_ref().unwrap().1)
         }   
         self.peek = self.scan()?;
         Ok(())

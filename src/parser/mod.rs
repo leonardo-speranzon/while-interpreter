@@ -11,57 +11,42 @@ mod lexer;
 mod cst;
 pub mod types;
 
-const DEBUG:bool = true;
-
 pub fn parse_string(str: String) -> Result<Statement,ParserError> {
-    let mut lexer = MyLexer::from(str.as_str());
-    if DEBUG {
-        println!("TOKENS: ");
-        loop{
-            match lexer.next() {
-                Ok(Some(t)) => print!("{:?} ",t),
-                Ok(None) => break,
-                Err(err) => {println!("{:?}",err);break;},
-            }
-        }
-        println!("\n==============================");
-        lexer = MyLexer::from(str.as_str());
-    }
+    let lexer = MyLexer::from(str.as_str());
     return parse(lexer)
 }
 pub fn parse_file(file: File) -> Result<Statement,ParserError> {
-    // if DEBUG {
-    //     let mut lexer = MyLexer::from(file);
-    //     println!("TOKENS: ");
-    //     loop{
-    //         match lexer.next() {
-    //             Ok(Some(t)) => print!("{:?} ",t),
-    //             Ok(None) => break,
-    //             Err(err) => {println!("{:?}",err);break;},
-    //         }
-    //     }
-    //     println!("\n==============================");
-    //     // lexer = MyLexer::from(file);
-    // }
-
     let lexer = MyLexer::from(file);
     return parse(lexer)
 }
 
-fn parse(lexer: impl Lexer)-> Result<Statement,ParserError>{    
+fn parse(lexer: impl Lexer)-> Result<Statement,ParserError>{   
 
+    if std::env::var("print-token").is_ok_and(|s|s=="true") {
+        println!("╔════════╗");
+        println!("║ Tokens ║");
+        println!("╚════════╝"); 
+    }
     let cst_parser = ConcreteParser::new(lexer);
     let cst = cst_parser.parse()?;
+    
+    if std::env::var("print-token").is_ok_and(|s|s=="true") {
+        print!("\n\n");
+    }
 
     if std::env::var("print-cst").is_ok_and(|s|s=="true") {
-        println!("Raw CST:");
+        println!("╔═════════╗");
+        println!("║ Raw CST ║");
+        println!("╚═════════╝");
         println!("{:?}", &cst);
-        println!("==============================");
+        println!();
     }
     if std::env::var("print-pretty-cst").is_ok_and(|s|s=="true") {
-        println!("Pretty CST:");
+        println!("╔════════════╗");
+        println!("║ Pretty CST ║");
+        println!("╚════════════╝");
         println!("{}", &cst);
-        println!("==============================");
+        println!();
     }
 
 
@@ -69,14 +54,18 @@ fn parse(lexer: impl Lexer)-> Result<Statement,ParserError>{
 
 
     if std::env::var("print-ast").is_ok_and(|s|s=="true") {
-        println!("Raw AST:");
+        println!("╔═════════╗");
+        println!("║ Raw AST ║");
+        println!("╚═════════╝");
         println!("{:?}", &ast);
-        println!("==============================");
+        println!();
     }
     if std::env::var("print-pretty-ast").is_ok_and(|s|s=="true") {
-        println!("Pretty AST:");
+        println!("╔════════════╗");
+        println!("║ Pretty AST ║");
+        println!("╚════════════╝");
         println!("{}", &ast);
-        println!("==============================");
+        println!();
     }
 
     return Ok(ast);

@@ -14,6 +14,7 @@ fn main() {
     let code = examples::TEST_REPEAT_UNTIL;
 
     let config = Config::new();
+    std::env::set_var("print-token", config.print_token.to_string());
     std::env::set_var("print-cst", config.print_cst.to_string());
     std::env::set_var("print-ast", config.print_ast.to_string());
     std::env::set_var("print-pretty-cst", config.print_pretty_cst.to_string());
@@ -66,6 +67,7 @@ fn main() {
 struct Config {
     filename: Option<String>,
     init_state: Option<State>,
+    print_token: bool,
     print_cst: bool,
     print_pretty_cst: bool,
     print_ast: bool,
@@ -82,6 +84,7 @@ impl Config {
                 .help("Set initial state, must be in format <var-name>:<value>,<var-name>:<value>,...")
                 // .long_help("Set initial state, must be in format <var-name>:<value>,<var-name>:<value>,...")
                 .value_parser(parse_state))
+            .arg(Arg::new("token")     .long("token")     .short('t').help("Print token list").action(ArgAction::SetTrue))
             .arg(Arg::new("ast")       .long("ast")       .short('a').help("Print raw ast")   .action(ArgAction::SetTrue))
             .arg(Arg::new("pretty-ast").long("pretty-ast").short('A').help("Print pretty ast").action(ArgAction::SetTrue))
             .arg(Arg::new("cst")       .long("cst")       .short('c').help("Print raw ast")   .action(ArgAction::SetTrue))
@@ -91,6 +94,7 @@ impl Config {
         Config{
             filename: matches.get_one::<String>("filename").cloned(),
             init_state: matches.get_one::<State>("state").cloned(),
+            print_token: matches.get_flag("token"),
             print_cst: matches.get_flag("cst"),
             print_pretty_cst:matches.get_flag("pretty-cst"),
             print_ast: matches.get_flag("ast"),
