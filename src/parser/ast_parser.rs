@@ -108,6 +108,11 @@ fn parse_aexpr(cst: &cst::Aexpr) -> ast::Aexpr {
                 Box::new(parse_term(t))
             ),
         cst::Aexpr::Term(t) => parse_term(t),
+        cst::Aexpr::Opposite(f) => ast::Aexpr::Sub(
+            Box::new(ast::Aexpr::Num(0)),
+            Box::new(parse_factor(&f))
+        ),
+        
     }
 }
 fn parse_term(cst: &cst::Term) -> ast::Aexpr {

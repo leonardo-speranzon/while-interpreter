@@ -1,3 +1,4 @@
+n := -a ;
 while (not a == b) do 
     if a<=b then 
         b -= a;

@@ -6,7 +6,10 @@ pub type Var = String;
 pub enum Aexpr  {
     Add  (Box<Aexpr>,Box<Term>),
     Sub  (Box<Aexpr>, Box<Term>),
-    Term (Box<Term>)
+    Term (Box<Term>),
+
+    //syntactic sugars
+    Opposite (Box<Factor>),
 }
 
 #[derive(Debug, Clone)]

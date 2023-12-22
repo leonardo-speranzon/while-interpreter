@@ -136,6 +136,13 @@ impl<L: Lexer> ConcreteParser<L> {
     }
     
     fn parse_aexpr(&mut self) -> Result<Aexpr,ParserError> {
+        if let Some(Token::Minus) = self.lexer.peek() {
+            self.lexer.match_next(Token::Minus)?;    
+            return Ok(Aexpr::Opposite(Box::new(
+                self.parse_factor()?
+            )));   
+        }
+
         let t = self.parse_term()?;
         let mut aexpr = Aexpr::Term(Box::new(t));
         loop {

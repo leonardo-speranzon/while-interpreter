@@ -38,12 +38,13 @@ AssignStatement ::= Var ":=" Aexpr
 
 Aexpr ::= Aexpr "+" Term 
         | Aexpr "-" Term
+        | "-" Factor
         | Term
 
 Term  ::= Term "*" Factor
         | Factor
 
-Factor ::= Num | Var | "(" Aexpr ")" 
+Factor ::= Num | Var | "(" Aexpr ")"
 
 
 Bexpr ::= Bexpr "and" BexprAtomic
