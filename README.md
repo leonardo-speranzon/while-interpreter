@@ -3,10 +3,11 @@
 A rust implementation of an interpreter for while<sup>+</sup> language for the Software Verification course at UniPD
 
 The while<sup>+</sup> language add some syntactic sugar over while, namely:
-- For loops
+- For loop
 - Repeat until loop
 - Increase/Decrease statement
 - Boolean ops: `<`,`>`,`>=`, `!=`
+- Opposite arithmetic operation: `-`
 ## How to use
 
 To use the interpreter the command is simply: `cargo run <filename>`.
