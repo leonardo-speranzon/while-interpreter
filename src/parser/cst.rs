@@ -68,8 +68,9 @@ pub enum Statement {
 #[derive(Debug, Clone)]
 pub enum AssignStatements {
     Assign (Var, Box<Aexpr>),
-    Inc (Var, Box<Aexpr>),
-    Dec (Var, Box<Aexpr>),
+    AddAssign (Var, Box<Aexpr>),
+    SubAssign (Var, Box<Aexpr>),
+    MulAssign (Var, Box<Aexpr>),
 }
 
 #[derive(Debug, Clone)]

@@ -29,8 +29,9 @@ pub enum Token {
     Plus,
     Minus,
     Mul,
-    Inc,
-    Dec,
+    AddAssign,
+    SubAssign,
+    MulAssign,
 
     Eq,
     Neq,
@@ -238,8 +239,9 @@ fn match_symbol(s: &str)-> Option<Token>{
         "!=" => Some(Token::Neq),
 
         ":=" => Some(Token::Assign),
-        "+=" => Some(Token::Inc),
-        "-=" => Some(Token::Dec),
+        "+=" => Some(Token::AddAssign),
+        "-=" => Some(Token::SubAssign),
+        "*=" => Some(Token::MulAssign),
         _ => None
     }
 }

@@ -112,13 +112,17 @@ impl<L: Lexer> ConcreteParser<L> {
                 self.lexer.match_next(Token::Assign)?;
                 AssignStatements::Assign
             },
-            Some(Token::Inc) => {
-                self.lexer.match_next(Token::Inc)?;
-                AssignStatements::Inc
+            Some(Token::AddAssign) => {
+                self.lexer.match_next(Token::AddAssign)?;
+                AssignStatements::AddAssign
             },
-            Some(Token::Dec) => {
-                self.lexer.match_next(Token::Dec)?;
-                AssignStatements::Dec
+            Some(Token::SubAssign) => {
+                self.lexer.match_next(Token::SubAssign)?;
+                AssignStatements::SubAssign
+            },
+            Some(Token::MulAssign) => {
+                self.lexer.match_next(Token::MulAssign)?;
+                AssignStatements::MulAssign
             },
             _ => return Err(self.lexer.unexpected_error()),
         };

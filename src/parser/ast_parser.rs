@@ -77,7 +77,7 @@ fn parse_assign_statement(cst: &cst::AssignStatements) -> ast::Statement {
     match cst {
         cst::AssignStatements::Assign(x, a) => 
             ast::Statement::Assign(x.clone(), Box::new(parse_aexpr(a))),
-        cst::AssignStatements::Inc(x, a) => 
+        cst::AssignStatements::AddAssign(x, a) => 
             ast::Statement::Assign(
                 x.clone(),
                 Box::new(ast::Aexpr::Add(
@@ -85,10 +85,18 @@ fn parse_assign_statement(cst: &cst::AssignStatements) -> ast::Statement {
                     Box::new(parse_aexpr(a))
                 ))
             ),
-        cst::AssignStatements::Dec(x, a) => 
+        cst::AssignStatements::SubAssign(x, a) => 
             ast::Statement::Assign(
                 x.clone(),
                 Box::new(ast::Aexpr::Sub(
+                    Box::new(ast::Aexpr::Var(x.clone())), 
+                    Box::new(parse_aexpr(a))
+                ))
+            ),
+        cst::AssignStatements::MulAssign(x, a) => 
+            ast::Statement::Assign(
+                x.clone(),
+                Box::new(ast::Aexpr::Mul(
                     Box::new(ast::Aexpr::Var(x.clone())), 
                     Box::new(parse_aexpr(a))
                 ))

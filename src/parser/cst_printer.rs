@@ -92,8 +92,9 @@ impl Display for AssignStatements {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             AssignStatements::Assign(x, a) => write!(f, "{x}:= {a}"),
-            AssignStatements::Inc(x, a) => write!(f, "{x} += {a}"),
-            AssignStatements::Dec(x, a) => write!(f, "{x} -= {a}"),
+            AssignStatements::AddAssign(x, a) => write!(f, "{x}+= {a}"),
+            AssignStatements::SubAssign(x, a) => write!(f, "{x}-= {a}"),
+            AssignStatements::MulAssign(x, a) => write!(f, "{x}*= {a}"),
         }
     }
 }

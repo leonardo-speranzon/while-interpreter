@@ -5,8 +5,8 @@ A rust implementation of an interpreter for while<sup>+</sup> language for the S
 The while<sup>+</sup> language add some syntactic sugar over while, namely:
 - For loop
 - Repeat until loop
-- Increase/Decrease statement
-- Boolean ops: `<`,`>`,`>=`, `!=`
+- Op-assignment statements: `+=`, `-=`, `*=`
+- Boolean ops: `<`, `>`, `>=`, `!=`
 - Opposite arithmetic operation: `-`
 ## How to use
 
@@ -36,6 +36,7 @@ Statement ::= "skip;"
 AssignStatement ::= Var ":=" Aexpr
                   | Var "+=" Aexpr
                   | Var "-=" Aexpr
+                  | Var "*=" Aexpr
 
 Aexpr ::= Aexpr "+" Term 
         | Aexpr "-" Term
