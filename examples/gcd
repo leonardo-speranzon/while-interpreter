@@ -1,4 +1,4 @@
-n := -a ;
+n :=( -((-a) + 1 ))*2;
 while (not a == b) do 
     if a<=b then 
         b -= a;

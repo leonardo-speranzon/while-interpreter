@@ -144,16 +144,23 @@ impl<'a> MyLexer<'a>{
             }
             Some((_, _, c@('='|'<'|'>'|'!'|'-'|'+'|'*'|'('|')'|'{'|'}'|':'|';'))) =>{
                 let mut symbol = c.to_string();
+                let mut  last_valid_tok = match_symbol(&symbol);
 
-                while let None = match_terminal_symbol(&symbol) {
-                    if let Some((_, _, c@('='|'<'|'>'|'!'|'-'|'+'|'*'|'('|')'|'{'|'}'|':'|';'))) = self.chars.next() {
-                        symbol.push(c)
-                    }else{
-                        break
+                while let Some((_, _, c@('='|'<'|'>'|'!'|'-'|'+'|'*'|'('|')'|'{'|'}'|':'|';'))) = self.chars.peek() {
+                    symbol.push(c.clone());
+                    match match_symbol(&symbol){
+                        Some(tok) => {
+                            self.chars.next();
+                            last_valid_tok = Some(tok);
+                        },
+                        None => break,
+                    }
+                    if let Some(tok) = match_symbol(&symbol)  {
+                        last_valid_tok = Some(tok)
                     }
                 }
 
-                match match_symbol(&symbol)  {
+                match last_valid_tok  {
                     Some(tok) => tok,
                     None => return Err(ParserError::UnknownSymbol { 
                         pos: start_pos.unwrap(),
@@ -167,7 +174,7 @@ impl<'a> MyLexer<'a>{
             }),
             None => return Ok(None),
         };
-        // println!("{:?}",&tok);
+        println!("{:?}",&tok);
         return Ok(Some((start_pos.unwrap(), tok)));
     }
 }
@@ -211,27 +218,9 @@ impl<'a> Lexer for MyLexer<'a> {
             None => return ParserError::UnexpectedEOF,
         }   
     }
+    
 }
 
-fn match_terminal_symbol(s: &str) -> Option<Token>{
-    match s {
-        ";" => Some(Token::Semicolon),
-        "(" => Some(Token::BracketOpen),
-        ")" => Some(Token::BracketClose),
-        "{" => Some(Token::CurlyOpen),
-        "}" => Some(Token::CurlyClose),
-
-        "==" => Some(Token::Eq),
-        "<=" => Some(Token::Lte),
-        ">=" => Some(Token::Gte),
-        "!=" => Some(Token::Neq),
-
-        ":=" => Some(Token::Assign),
-        "+=" => Some(Token::Inc),
-        "-=" => Some(Token::Dec),
-        _ => None,
-    }
-}
 fn match_symbol(s: &str)-> Option<Token>{
     match s{
         ";" => Some(Token::Semicolon),
