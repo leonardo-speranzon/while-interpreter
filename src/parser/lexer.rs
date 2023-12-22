@@ -174,7 +174,7 @@ impl<'a> MyLexer<'a>{
             }),
             None => return Ok(None),
         };
-        println!("{:?}",&tok);
+        // println!("{:?}",&tok);
         return Ok(Some((start_pos.unwrap(), tok)));
     }
 }

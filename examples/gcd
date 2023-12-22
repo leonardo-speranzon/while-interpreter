@@ -1,7 +1,8 @@
 n :=( -((-a) + 1 ))*2;
-while (not a == b) do 
+while a != b do 
     if a<=b then 
         b -= a;
     else
         a -= b;
+    
 gcd:=a;

@@ -5,6 +5,7 @@ use crate::{ast::Statement, parser::{lexer::Lexer, cst_parser::ConcreteParser, a
 use self::{types::ParserError, lexer::MyLexer};
 
 mod cst_parser;
+mod cst_printer;
 mod ast_parser;
 mod lexer;
 mod cst;
@@ -58,10 +59,9 @@ fn parse(lexer: impl Lexer)-> Result<Statement,ParserError>{
         println!("==============================");
     }
     if std::env::var("print-pretty-cst").is_ok_and(|s|s=="true") {
-        todo!();
-        // println!("Pretty CST:");
-        // println!("{}", &cst);
-        // println!("==============================");
+        println!("Pretty CST:");
+        println!("{}", &cst);
+        println!("==============================");
     }
 
 
