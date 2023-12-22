@@ -51,7 +51,7 @@ Bexpr ::= Bexpr "and" BexprAtomic
         | BexprAtomic
     
 BexprAtomic ::= "true" | "false"
-              | Aexpr "=" Aexpr
+              | Aexpr "==" Aexpr
               | Aexpr "!=" Aexpr
               | Aexpr "<" Aexpr
               | Aexpr "<=" Aexpr

@@ -241,13 +241,13 @@ impl<L: Lexer> ConcreteParser<L> {
                         let a2 = self.parse_aexpr()?;
                         Ok(BexprAtomic::Equal(Box::new(a1), Box::new(a2)))
                     }
-                    Some(Token::Ne) => {
+                    Some(Token::Neq) => {
                         self.lexer.match_next(Token::Eq)?;
                         let a2 = self.parse_aexpr()?;
                         Ok(BexprAtomic::NotEqual(Box::new(a1), Box::new(a2)))
                     }
-                    Some (Token::Le) => {
-                        self.lexer.match_next(Token::Le)?;
+                    Some (Token::Lte) => {
+                        self.lexer.match_next(Token::Lte)?;
                         let a2 = self.parse_aexpr()?;
                         Ok(BexprAtomic::LessEq(Box::new(a1), Box::new(a2)))
                     }
@@ -256,8 +256,8 @@ impl<L: Lexer> ConcreteParser<L> {
                         let a2 = self.parse_aexpr()?;
                         Ok(BexprAtomic::Less(Box::new(a1), Box::new(a2)))
                     }
-                    Some (Token::Ge) => {
-                        self.lexer.match_next(Token::Ge)?;
+                    Some (Token::Gte) => {
+                        self.lexer.match_next(Token::Gte)?;
                         let a2 = self.parse_aexpr()?;
                         Ok(BexprAtomic::GreaterEq(Box::new(a1), Box::new(a2)))
                     }

@@ -33,11 +33,11 @@ pub enum Token {
     Dec,
 
     Eq,
-    Ne,
+    Neq,
     Lt,
-    Le,
+    Lte,
     Gt,
-    Ge,
+    Gte,
     
 
     Not,
@@ -128,39 +128,6 @@ impl<'a> MyLexer<'a>{
 
         let start_pos: Option<TokenPosition> = self.chars.peek().map(|(l,c,_)|(l.to_owned(),c.to_owned()));
         let tok = match self.chars.next() {
-            Some((_, _, ';')) => Token::Semicolon,
-            Some((_, _, '=')) => Token::Eq,
-            Some((_, _, '*')) => Token::Mul,
-            Some((_, _, '(')) => Token::BracketOpen,
-            Some((_, _, ')')) => Token::BracketClose,
-            Some((_, _, '{')) => Token::CurlyOpen,
-            Some((_, _, '}')) => Token::CurlyClose,
-            Some((_, _, ':')) =>  match self.chars.next(){
-                Some((_, _, '=')) => Token::Assign,
-                Some((l,c,symbol)) => return Err(ParserError::UnknownSymbol { pos: (l,c), symbol }),
-                None => return Err(ParserError::UnexpectedEOF)
-            },
-            Some((_, _, '!')) =>  match self.chars.next(){
-                Some((_, _, '=')) => Token::Ne,
-                Some((l,c,symbol)) => return Err(ParserError::UnknownSymbol { pos: (l,c), symbol }),
-                None => return Err(ParserError::UnexpectedEOF)
-            },
-            Some((_, _, '+')) => match self.chars.next_if(|(_, _, c)|c == &'=') {
-                Some((_, _, '=')) => Token::Inc,
-                _ => Token::Plus,
-            },
-            Some((_, _, '-')) => match self.chars.next_if(|(_, _, c)|c == &'=') {
-                Some((_, _, '=')) =>  Token::Dec,
-                _ => Token::Minus,
-            },
-            Some((_, _, '<')) => match self.chars.next_if(|(_, _, c)|c == &'=') {
-                Some((_, _, '=')) =>  Token::Le,
-                _ => Token::Lt,
-            },
-            Some((_, _, '>')) =>  match self.chars.next_if(|(_, _, c)|c == &'=') {
-                Some((_, _, '=')) =>  Token::Ge,
-                _ => Token::Gt,
-            },
             Some((_, _, d@'0'..='9')) => {
                 let mut digits = d.to_string();
                 while let Some((_, _, d)) = self.chars.next_if(|(_, _, c)| c.is_ascii_digit()){
@@ -173,37 +140,34 @@ impl<'a> MyLexer<'a>{
                 while let Some((_, _, c)) = self.chars.next_if(|(_, _, c)| c.is_ascii_alphanumeric() || c == &'_'){
                     word.push(c)
                 }
-
-                let tok = match word.as_str() {
-                    "if" => Token::If,
-                    "then" => Token::Then,
-                    "else" => Token::Else,
-
-                    "while" => Token::While,
-                    "do" => Token::Do,
-                    "repeat" => Token::Repeat,
-                    "until" => Token::Until,
-                    "for" => Token::For,
-                    "skip" => Token::Skip,                    
-                    
-                    "not" => Token::Not,
-                    "and" => Token::And,
-                    "or" => Token::Or,
-
-                    "true" => Token::True,
-                    "false" => Token::False,
-                    
-                    s => Token::Id(s.to_string()),
-                };
-                tok
+                match_keyword(&word).unwrap_or(Token::Id(word))
             }
-            Some((_, _, c)) => return Err(ParserError::UnknownSymbol{
+            Some((_, _, c@('='|'<'|'>'|'!'|'-'|'+'|'*'|'('|')'|'{'|'}'|':'|';'))) =>{
+                let mut symbol = c.to_string();
+
+                while let None = match_terminal_symbol(&symbol) {
+                    if let Some((_, _, c@('='|'<'|'>'|'!'|'-'|'+'|'*'|'('|')'|'{'|'}'|':'|';'))) = self.chars.next() {
+                        symbol.push(c)
+                    }else{
+                        break
+                    }
+                }
+
+                match match_symbol(&symbol)  {
+                    Some(tok) => tok,
+                    None => return Err(ParserError::UnknownSymbol { 
+                        pos: start_pos.unwrap(),
+                        symbol: symbol.pop().unwrap()
+                    })
+                }
+            }
+            Some((_,_,c))=> return Err(ParserError::UnknownSymbol{
                 pos: start_pos.unwrap(),
                 symbol: c,
             }),
             None => return Ok(None),
         };
-        
+        // println!("{:?}",&tok);
         return Ok(Some((start_pos.unwrap(), tok)));
     }
 }
@@ -215,7 +179,7 @@ impl<'a> Lexer for MyLexer<'a> {
         self.peek.clone().map(|(_,t)|t)
     }
     fn next(&mut self) -> Result<Option<Token>, ParserError> {
-        let tok = self.peek.clone();
+        let tok: Option<((usize, usize), Token)> = self.peek.clone();
         self.peek = self.scan()?;
         return Ok(tok.map(|(_,t)|t))
     }
@@ -246,5 +210,74 @@ impl<'a> Lexer for MyLexer<'a> {
             }
             None => return ParserError::UnexpectedEOF,
         }   
+    }
+}
+
+fn match_terminal_symbol(s: &str) -> Option<Token>{
+    match s {
+        ";" => Some(Token::Semicolon),
+        "(" => Some(Token::BracketOpen),
+        ")" => Some(Token::BracketClose),
+        "{" => Some(Token::CurlyOpen),
+        "}" => Some(Token::CurlyClose),
+
+        "==" => Some(Token::Eq),
+        "<=" => Some(Token::Lte),
+        ">=" => Some(Token::Gte),
+        "!=" => Some(Token::Neq),
+
+        ":=" => Some(Token::Assign),
+        "+=" => Some(Token::Inc),
+        "-=" => Some(Token::Dec),
+        _ => None,
+    }
+}
+fn match_symbol(s: &str)-> Option<Token>{
+    match s{
+        ";" => Some(Token::Semicolon),
+        "(" => Some(Token::BracketOpen),
+        ")" => Some(Token::BracketClose),
+        "{" => Some(Token::CurlyOpen),
+        "}" => Some(Token::CurlyClose),
+
+        "*" => Some(Token::Mul),
+        "+" => Some(Token::Plus),
+        "-" => Some(Token::Minus),
+
+        "==" => Some(Token::Eq),
+        "<" => Some(Token::Lt),
+        ">" => Some(Token::Gt),
+        "<=" => Some(Token::Lte),
+        ">=" => Some(Token::Gte),
+        "!=" => Some(Token::Neq),
+
+        ":=" => Some(Token::Assign),
+        "+=" => Some(Token::Inc),
+        "-=" => Some(Token::Dec),
+        _ => None
+    }
+}
+
+fn match_keyword(kw: &str)->Option<Token>{
+    match kw {
+        "if" => Some(Token::If),
+        "then" => Some(Token::Then),
+        "else" => Some(Token::Else),
+
+        "while" => Some(Token::While),
+        "do" => Some(Token::Do),
+        "repeat" => Some(Token::Repeat),
+        "until" => Some(Token::Until),
+        "for" => Some(Token::For),
+        "skip" => Some(Token::Skip),                    
+        
+        "not" => Some(Token::Not),
+        "and" => Some(Token::And),
+        "or" => Some(Token::Or),
+
+        "true" => Some(Token::True),
+        "false" => Some(Token::False),
+        
+        _ => None,
     }
 }
