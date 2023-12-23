@@ -1,6 +1,6 @@
-use crate::types::ast::{Statement, Aexpr, Bexpr, ConcreteType};
+use crate::types::{ast::{Statement, Aexpr, Bexpr, ConcreteType}, errors::RuntimeError};
 
-use super::types::{RuntimeError, State};
+use super::types::State;
 
 pub fn eval_statement<N: ConcreteType>(statement: &Statement<N>, mut state: State<N>) -> Result<State<N>, RuntimeError> {
     match statement {

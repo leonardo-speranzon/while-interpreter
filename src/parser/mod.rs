@@ -1,15 +1,11 @@
 use std::fs::File;
 
-use crate::{types::ast::{Statement, ConcreteType}, parser::{lexer::Lexer, cst_parser::ConcreteParser, ast_parser::abstract_parse}};
-
-use self::{types::ParserError, lexer::MyLexer};
+use crate::{types::{ast::{Statement, ConcreteType}, errors::ParserError}, parser::{lexer::Lexer, cst_parser::ConcreteParser, ast_parser::abstract_parse}};
+use self::lexer::MyLexer;
 
 mod cst_parser;
-mod cst_printer;
 mod ast_parser;
 mod lexer;
-mod cst;
-pub mod types;
 
 pub fn parse_string<N: ConcreteType>(str: String) -> Result<Statement<N>,ParserError> {
     let lexer = MyLexer::from(str.as_str());

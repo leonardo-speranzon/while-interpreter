@@ -1,12 +1,11 @@
 use std::fs::File;
 use clap::{Command, ArgAction, Arg};
-use interpreter::{types::{RuntimeError, State}, interpreter::eval_statement};
-use parser::{types::ParserError, parse_string, parse_file};
-use types::ast::Num;
+use interpreter::{types::State, interpreter::eval_statement};
+use parser::{ parse_string, parse_file};
+use types::{ast::Num, errors::{ParserError, RuntimeError}};
 
 
 mod types;
-mod ast_printer;
 mod interpreter;
 mod parser;
 mod examples;

@@ -1,5 +1,5 @@
 use crate::types::ast::{self, ConcreteType};
-use super::cst;
+use crate::types::cst;
 
 
 
