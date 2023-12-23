@@ -1,8 +1,8 @@
-use crate::ast::{Statement, Aexpr, Bexpr, Num};
+use crate::types::ast::{Statement, Aexpr, Bexpr, ConcreteType};
 
 use super::types::{RuntimeError, State};
 
-pub fn eval_statement(statement: &Statement, mut state: State) -> Result<State, RuntimeError> {
+pub fn eval_statement<N: ConcreteType>(statement: &Statement<N>, mut state: State<N>) -> Result<State<N>, RuntimeError> {
     match statement {
         Statement::Assign(x, aexpr) => {
             state.insert(x.to_string(), eval_aexpr(aexpr, &state)?);
@@ -35,14 +35,14 @@ pub fn eval_statement(statement: &Statement, mut state: State) -> Result<State, 
             //     bottom,
             //     id
             // );
-            let f_bottom = |s:State|{
+            let f_bottom = |s: State<N>|{
                 if eval_bexpr(b, &s)? {
                     Ok(None)
                 } else {
                     Ok(Some(s))
                 }
             };
-            let mut last_state: State = state.clone();
+            let mut last_state: State<N> = state.clone();
             
             // let mut i=0;
             
@@ -76,7 +76,7 @@ pub fn eval_statement(statement: &Statement, mut state: State) -> Result<State, 
 
 
 
-fn eval_bexpr(bexpr: &Bexpr, state: &State) -> Result<bool,RuntimeError> {
+fn eval_bexpr<N: ConcreteType>(bexpr: &Bexpr<N>, state: &State<N>) -> Result<bool,RuntimeError> {
     let b = match bexpr {
         Bexpr::True => true,
         Bexpr::False => false,
@@ -92,7 +92,7 @@ fn eval_bexpr(bexpr: &Bexpr, state: &State) -> Result<bool,RuntimeError> {
     Ok(b)
 }
 
-fn eval_aexpr(aexpr: &Aexpr, state: &State) -> Result<Num,RuntimeError> {
+fn eval_aexpr<N: ConcreteType>(aexpr: &Aexpr<N>, state: &State<N>) -> Result<N,RuntimeError> {
     let num = match aexpr {
         Aexpr::Num(n) => n.to_owned(),
         Aexpr::Var(x) => 

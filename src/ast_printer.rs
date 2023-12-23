@@ -1,9 +1,9 @@
 use std::fmt::Display;
 
-use crate::ast::{Aexpr, Bexpr, Statement};
+use crate::types::ast::{Aexpr, Bexpr, Statement, ConcreteType};
 
 
-impl Display for Aexpr {
+impl<N: ConcreteType> Display for Aexpr<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Aexpr::Num(n) => 
@@ -20,7 +20,7 @@ impl Display for Aexpr {
     }
 }
 
-impl Display for Bexpr {
+impl<N: ConcreteType> Display for Bexpr<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Bexpr::True => 
@@ -39,23 +39,7 @@ impl Display for Bexpr {
     }
 }
 
-// impl Display for Statement {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         match self {
-//             Statement::Assign(x, a) => 
-//                 write!(f, "{x}:= {a}"),
-//             Statement::Skip => 
-//                 write!(f, "skip"),
-//             Statement::Compose(s1, s2) => 
-//                 write!(f, "{s1}; {s2}"),
-//             Statement::IfThenElse(b, s1, s2) => 
-//                 write!(f, "if {b} then {s1} else {s2}"),
-//             Statement::While(b, s) => 
-//                 write!(f, "while {b} do {s}"),
-//         }
-//     }
-// }
-impl Display for Statement {
+impl<N: ConcreteType> Display for Statement<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Statement::Assign(x, a) => 

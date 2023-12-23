@@ -1,7 +1,7 @@
 use std::io::{BufReader, BufRead};
 use std::iter::Peekable;
 use std::fs::File;
-use crate::ast::Num;
+use crate::types::ast::Num;
 use super::types::ParserError;
 
 

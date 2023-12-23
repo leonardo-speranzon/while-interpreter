@@ -2,14 +2,19 @@ use std::fs::File;
 use clap::{Command, ArgAction, Arg};
 use interpreter::{types::{RuntimeError, State}, interpreter::eval_statement};
 use parser::{types::ParserError, parse_string, parse_file};
-use ast::Num;
+use types::ast::Num;
 
-mod ast;
+
+mod types;
 mod ast_printer;
 mod interpreter;
 mod parser;
 mod examples;
+
+type MyType = i128;
+
 fn main() {
+
 
     let code = examples::TEST_REPEAT_UNTIL;
 
@@ -66,7 +71,7 @@ fn main() {
 #[derive(Debug)]
 struct Config {
     filename: Option<String>,
-    init_state: Option<State>,
+    init_state: Option<State<MyType>>,
     print_token: bool,
     print_cst: bool,
     print_pretty_cst: bool,
@@ -93,7 +98,7 @@ impl Config {
         
         Config{
             filename: matches.get_one::<String>("filename").cloned(),
-            init_state: matches.get_one::<State>("state").cloned(),
+            init_state: matches.get_one::<State<MyType>>("state").cloned(),
             print_token: matches.get_flag("token"),
             print_cst: matches.get_flag("cst"),
             print_pretty_cst:matches.get_flag("pretty-cst"),
@@ -104,7 +109,7 @@ impl Config {
 }
 
 
-fn parse_state(str_state: &str) -> Result<State, String> {
+fn parse_state(str_state: &str) -> Result<State<MyType>, String> {
     str_state
         .split(',')
         .map(|pair_str|{

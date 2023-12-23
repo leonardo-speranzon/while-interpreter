@@ -1,13 +1,13 @@
+use crate::types::ast::{self, ConcreteType};
 use super::cst;
-use crate::ast;
 
 
 
-pub fn abstract_parse(cst: &cst::Statements) -> ast::Statement {
+pub fn abstract_parse<N: ConcreteType>(cst: &cst::Statements) -> ast::Statement<N> {
     parse_statements(cst)
 }
 
-fn parse_statements(cst: &cst::Statements) -> ast::Statement {
+fn parse_statements<N: ConcreteType>(cst: &cst::Statements) -> ast::Statement<N> {
     match cst{
         cst::Statements::Singleton( s) => parse_statement(s),
         cst::Statements::Composition(s1, s2) =>
@@ -18,7 +18,7 @@ fn parse_statements(cst: &cst::Statements) -> ast::Statement {
     }
 }
 
-fn parse_statement(cst: &cst::Statement) -> ast::Statement {
+fn parse_statement<N: ConcreteType>(cst: &cst::Statement) -> ast::Statement<N> {
     match cst{
         cst::Statement::Skip => 
             ast::Statement::Skip,
@@ -73,7 +73,7 @@ fn parse_statement(cst: &cst::Statement) -> ast::Statement {
     }
 }
 
-fn parse_assign_statement(cst: &cst::AssignStatements) -> ast::Statement {
+fn parse_assign_statement<N: ConcreteType>(cst: &cst::AssignStatements) -> ast::Statement<N> {
     match cst {
         cst::AssignStatements::Assign(x, a) => 
             ast::Statement::Assign(x.clone(), Box::new(parse_aexpr(a))),
@@ -103,7 +103,7 @@ fn parse_assign_statement(cst: &cst::AssignStatements) -> ast::Statement {
             ),
     }
 }
-fn parse_aexpr(cst: &cst::Aexpr) -> ast::Aexpr {
+fn parse_aexpr<N: ConcreteType>(cst: &cst::Aexpr) -> ast::Aexpr<N> {
     match cst {
         cst::Aexpr::Add(a, t) => 
             ast::Aexpr::Add(
@@ -117,13 +117,13 @@ fn parse_aexpr(cst: &cst::Aexpr) -> ast::Aexpr {
             ),
         cst::Aexpr::Term(t) => parse_term(t),
         cst::Aexpr::Opposite(f) => ast::Aexpr::Sub(
-            Box::new(ast::Aexpr::Num(0)),
+            Box::new(ast::Aexpr::Num(0.into())),
             Box::new(parse_factor(&f))
         ),
         
     }
 }
-fn parse_term(cst: &cst::Term) -> ast::Aexpr {
+fn parse_term<N: ConcreteType>(cst: &cst::Term) -> ast::Aexpr<N> {
     match cst {
         cst::Term::Mul(t, f) => 
             ast::Aexpr::Mul(
@@ -133,9 +133,9 @@ fn parse_term(cst: &cst::Term) -> ast::Aexpr {
         cst::Term::Factor(f) => parse_factor(f),
     }
 }
-fn parse_factor(cst: &cst::Factor) -> ast::Aexpr {
+fn parse_factor<N: ConcreteType>(cst: &cst::Factor) -> ast::Aexpr<N> {
     match cst {
-        cst::Factor::Num(n) => ast::Aexpr::Num(*n),
+        cst::Factor::Num(n) => ast::Aexpr::Num((*n).into()),
         cst::Factor::Var(x) => ast::Aexpr::Var(x.clone()),
         cst::Factor::Aexpr(a) => parse_aexpr(a),
     }
@@ -143,7 +143,7 @@ fn parse_factor(cst: &cst::Factor) -> ast::Aexpr {
 
 
 
-fn parse_bexpr(cst: &cst::Bexpr) -> ast::Bexpr {
+fn parse_bexpr<N: ConcreteType>(cst: &cst::Bexpr) -> ast::Bexpr<N> {
     match cst {
         cst::Bexpr::And(b, ba) =>
             ast::Bexpr::And(
@@ -161,7 +161,7 @@ fn parse_bexpr(cst: &cst::Bexpr) -> ast::Bexpr {
             parse_bexpr_atomic(ba),
     }
 }
-fn parse_bexpr_atomic(cst: &cst::BexprAtomic) -> ast::Bexpr {
+fn parse_bexpr_atomic<N: ConcreteType>(cst: &cst::BexprAtomic) -> ast::Bexpr<N> {
     match cst {
         cst::BexprAtomic::True => ast::Bexpr::True,
         cst::BexprAtomic::False => ast::Bexpr::False,

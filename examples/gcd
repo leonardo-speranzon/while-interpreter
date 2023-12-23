@@ -1,7 +1,7 @@
 n :=( -((-a) + 1 ))*2;
 while a != b do 
     if a<=b then 
-        b *= a;
+        b -= a;
     else
         a -= b;
     

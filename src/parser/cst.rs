@@ -1,4 +1,4 @@
-use crate::ast::Num;
+use crate::types::ast::Num;
 
 pub type Var = String;
 

@@ -1,9 +1,7 @@
 use std::collections::HashMap;
 
-use crate::ast::Num;
 
-
-pub type State = HashMap<String, Num>;
+pub type State<N> = HashMap<String, N>;
 
 #[derive(Debug)]
 pub enum RuntimeError {
