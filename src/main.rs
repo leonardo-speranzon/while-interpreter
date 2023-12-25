@@ -2,13 +2,14 @@ use std::fs::File;
 use clap::{Command, ArgAction, Arg};
 use interpreter::{types::State, interpreter::eval_statement};
 use parser::{ parse_string, parse_file};
-use types::{ast::Num, errors::{ParserError, RuntimeError}};
+use types::{ast::{Num, Statement}, errors::{ParserError, RuntimeError}};
 
 
 mod types;
 mod interpreter;
 mod parser;
 mod examples;
+mod analyzer;
 
 type MyType = i128;
 
@@ -25,7 +26,7 @@ fn main() {
     std::env::set_var("print-pretty-ast", config.print_pretty_ast.to_string());
 
 
-    let ast = match config.filename {
+    let ast: Result<Statement<i128>, ParserError> = match config.filename {
         Some(filename) => {
             let f = match File::open(&filename){
                 Ok(f) => f,

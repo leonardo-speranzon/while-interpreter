@@ -1,22 +1,22 @@
 use std::fs::File;
 
-use crate::{types::{ast::{Statement, ConcreteType}, errors::ParserError}, parser::{lexer::Lexer, cst_parser::ConcreteParser, ast_parser::abstract_parse}};
+use crate::{types::{ast::{Statement, Num}, errors::ParserError}, parser::{lexer::Lexer, cst_parser::ConcreteParser, ast_parser::abstract_parse}};
 use self::lexer::MyLexer;
 
 mod cst_parser;
 mod ast_parser;
 mod lexer;
 
-pub fn parse_string<N: ConcreteType>(str: String) -> Result<Statement<N>,ParserError> {
+pub fn parse_string(str: String) -> Result<Statement<Num>,ParserError> {
     let lexer = MyLexer::from(str.as_str());
     return parse(lexer)
 }
-pub fn parse_file<N: ConcreteType>(file: File) -> Result<Statement<N>,ParserError> {
+pub fn parse_file(file: File) -> Result<Statement<Num>,ParserError> {
     let lexer = MyLexer::from(file);
     return parse(lexer)
 }
 
-fn parse<N: ConcreteType>(lexer: impl Lexer)-> Result<Statement<N>,ParserError>{   
+fn parse(lexer: impl Lexer)-> Result<Statement<Num>,ParserError>{   
 
     if std::env::var("print-token").is_ok_and(|s|s=="true") {
         println!("╔════════╗");

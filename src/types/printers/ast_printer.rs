@@ -1,9 +1,8 @@
 use std::fmt::Display;
+use crate::types::ast::{Aexpr, Bexpr, Statement};
 
-use crate::types::ast::{Aexpr, Bexpr, Statement, ConcreteType};
 
-
-impl<N: ConcreteType> Display for Aexpr<N> {
+impl<N: Display> Display for Aexpr<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Aexpr::Num(n) => 
@@ -20,7 +19,7 @@ impl<N: ConcreteType> Display for Aexpr<N> {
     }
 }
 
-impl<N: ConcreteType> Display for Bexpr<N> {
+impl<N: Display> Display for Bexpr<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Bexpr::True => 
@@ -39,7 +38,7 @@ impl<N: ConcreteType> Display for Bexpr<N> {
     }
 }
 
-impl<N: ConcreteType> Display for Statement<N> {
+impl<N: Display> Display for Statement<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Statement::Assign(x, a) => 
