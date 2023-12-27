@@ -1,44 +1,141 @@
-// type AbstractState<D: AbstractDomain> = State<D>;
-trait AbstractDomain {
-    //partial-ord
-    fn bottom() -> Self;
-    fn top() -> Self;
-    fn lub(&self, rhs: &Self) -> Self;
-    fn glb(&self, rhs: &Self) -> Self;
-    // fn widening();
-    // fn narrowing();
-    //arithmetic-ops
+mod sign_domain;
+
+use std::ops::{Add, Sub};
+
+use crate::{interpreter::types::State, types::ast::{Statement, Aexpr, Bexpr}};
+
+enum Operators{
+    Add,Sub,Mul//,Div
 }
 
-// trait StaticAnalyzer<D: AbstractDomain> {
-//     fn eval_stm(stm: Statement<D>, s: AbstractState<D>)-> AbstractState<D>;
-//     fn eval_aexpr(a: Aexpr<D>, s: AbstractState<D>)-> D;
-//     fn eval_bexpr(b: Bexpr<D>, s: AbstractState<D>)-> AbstractState<D>;
-// }
+#[derive(PartialEq)]
+struct AbstractState<D>(Option<State<D>>);
 
-// struct MyAnalyzer{}
+impl<D: AbstractDomain> AbstractState<D> {
+    fn bottom() -> Self{
+        AbstractState(None)
+    }
+    fn top() -> Self{
+        AbstractState(Some(State::new()))
+    }    
+    fn lub(&self, other: &Self) -> Self { todo!() } 
+    fn glb(&self, other: &Self) -> Self { todo!() }
+}
+
+impl<D: AbstractDomain> PartialOrd for AbstractState<D> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        todo!()
+    }
+}
+
+trait AbstractDomain : PartialOrd + Clone + Sized {
+    fn bottom() -> Self;
+    fn top() -> Self;
+    fn lub(&self, other: &Self) -> Self;
+    fn glb(&self, other: &Self) -> Self;
+
+    fn abstract_operator(op: Operators, lhs: &Self, rhs: &Self) -> Self;
+    fn backward_abstract_operator(op: Operators, lhs: &Self, rhs: &Self, res: &Self) -> (Self, Self);
+    // fn widening();
+    // fn narrowing();
+}
+
+trait StaticAnalyzer<D: AbstractDomain> {
+    fn eval_stm(stm: &Statement<D>, s: AbstractState<D>)-> AbstractState<D>;
+    fn eval_aexpr(a: &Aexpr<D>, s: &AbstractState<D>)-> D;
+    fn refine_aexpr(a: &Aexpr<D>,s:AbstractState<D>, dom: &D) -> AbstractState<D>;
+    fn eval_bexpr(b: &Bexpr<D>, s: AbstractState<D>)-> AbstractState<D>;
+}
+
+struct MyAnalyzer{}
 
 
-// impl<D: AbstractDomain> StaticAnalyzer<D> for MyAnalyzer{
-//     fn eval_stm(stm: Statement<D>, s: AbstractState<D>)-> AbstractState<D> {
-//         todo!()
-//     }
+impl<D: AbstractDomain> StaticAnalyzer<D> for MyAnalyzer{
+    fn eval_stm(stm: &Statement<D>, s: AbstractState<D>)-> AbstractState<D> {
+        todo!()
+    }
 
-//     fn eval_aexpr(a: Aexpr<D>, s: AbstractState<D>)-> D {
-//         todo!()
-//     }
+    fn eval_aexpr(a: &Aexpr<D>, s: &AbstractState<D>)-> D {
+        match a {
+            Aexpr::Num(n) => n.clone(),
+            Aexpr::Var(x) => match s {
+                AbstractState(Some(s)) => match s.get(x) {
+                    Some(n) => n.clone(),
+                    None => D::bottom(),
+                },
+                AbstractState(None) => D::bottom(),
+            },
+            Aexpr::Add(a1, a2) => {
+                let n1 = Self::eval_aexpr(a1, s);
+                let n2 = Self::eval_aexpr(a2, s);
+                D::abstract_operator(Operators::Add, &n1, &n2)
+            },
+            Aexpr::Mul(a1, a2) => todo!(),
+            Aexpr::Sub(a1, a2) => todo!(),
+        }
+    }
 
-//     fn eval_bexpr(b: Bexpr<D>, s: AbstractState<D>)-> AbstractState<D> {
-//         todo!()
-//     }
-// }
+    fn eval_bexpr(b: &Bexpr<D>, s: AbstractState<D>)-> AbstractState<D> {
+        match b{
+            Bexpr::True => s,
+            Bexpr::False => AbstractState::bottom(),
+            Bexpr::Equal(a1, a2) => {
+                let n1 = Self::eval_aexpr(a1, &s);
+                let n2 = Self::eval_aexpr(a2, &s);
+                let dom = n1.glb(&n2);
+                let s = Self::refine_aexpr(a1, s, &dom);
+                let s = Self::refine_aexpr(a2, s, &dom);
+                s
+            },
+            Bexpr::LessEq(_, _) => todo!(),
+            Bexpr::Not(_) => todo!(),
+            Bexpr::And(_, _) => todo!(),
+        }
+    }
 
-// enum Sign{
-//     Positive,
-//     Zero,
-//     Negative,
-// }
+    fn refine_aexpr(a: &Aexpr<D>, s: AbstractState<D>, dom: &D) -> AbstractState<D> {
+        match a {
+            Aexpr::Num(n) => {
+                if n.glb(dom) == D::bottom() {
+                    AbstractState::bottom()
+                } else {
+                    s
+                }
+            },
+            Aexpr::Var(x) => {
+                match s {
+                    AbstractState(Some(mut s)) => {
+                        let glb = s.get(x)
+                            .unwrap_or(&AbstractDomain::top())
+                            .glb(dom);
+                        if glb == D::bottom() {
+                            AbstractState(None)
+                        } else {
+                            s.insert(x.clone(), glb);
+                            AbstractState(Some(s))
+                        }
+                    }
+                    AbstractState(None) => s
+                }
+            },
+            Aexpr::Add(a1, a2) => {
+                let n1 = Self::eval_aexpr(a1, &s);
+                let n2 = Self::eval_aexpr(a2, &s);
 
-// impl AbstractDomain for Sign{
+                let (d1,d2) = D::backward_abstract_operator(
+                    Operators::Add,
+                    &n1,
+                    &n2,
+                    dom
+                );
 
-// }
+                let s = Self::refine_aexpr(a1, s,&d1);
+                let s = Self::refine_aexpr(a2, s,&d2);                
+                s
+            },
+            Aexpr::Mul(_, _) => todo!(),
+            Aexpr::Sub(_, _) => todo!(),
+        }
+    }
+}
+
