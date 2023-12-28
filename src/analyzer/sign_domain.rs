@@ -1,4 +1,4 @@
-use std::ops::{Add, Sub};
+use crate::types::ast::Operator;
 
 use super::AbstractDomain;
 
@@ -34,11 +34,11 @@ impl AbstractDomain for Sign{
         todo!()
     }
 
-    fn abstract_operator(op: super::Operators, lhs: &Self, rhs: &Self) -> Self {
+    fn abstract_operator(op: &Operator, lhs: &Self, rhs: &Self) -> Self {
         todo!()
     }
 
-    fn backward_abstract_operator(op: super::Operators, lhs: &Self, rhs: &Self, res: &Self) -> (Self, Self) {
+    fn backward_abstract_operator(op: &Operator, lhs: &Self, rhs: &Self, res: &Self) -> (Self, Self) {
         todo!()
     }
 }

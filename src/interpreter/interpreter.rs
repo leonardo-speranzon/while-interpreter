@@ -1,4 +1,4 @@
-use crate::types::{ast::{Statement, Aexpr, Bexpr, Num}, errors::RuntimeError};
+use crate::types::{ast::{Statement, Aexpr, Bexpr, Num, Operator}, errors::RuntimeError};
 
 use super::types::State;
 
@@ -100,12 +100,15 @@ fn eval_aexpr(aexpr: &Aexpr<Num>, state: &State<Num>) -> Result<Num,RuntimeError
                 Some(n) => n.to_owned(),
                 None => return Err(RuntimeError::VariableNotInitialized(x.clone())),
             }
-        Aexpr::Add(a1, a2) => 
-            eval_aexpr(a1, state)? + eval_aexpr(a2, state)?,
-        Aexpr::Mul(a1, a2) => 
-            eval_aexpr(a1, state)? * eval_aexpr(a2, state)?,
-        Aexpr::Sub(a1, a2) => 
-            eval_aexpr(a1, state)? - eval_aexpr(a2, state)?,
+        Aexpr::BinOp(op, a1, a2) =>{
+            let n1 = eval_aexpr(a1, state)?;
+            let n2 = eval_aexpr(a2, state)?;            
+            match op {
+                Operator::Add => n1 + n2,
+                Operator::Sub => n1 - n2,
+                Operator::Mul => n1 * n2,
+            }
+        }
     };
     Ok(num)
 }

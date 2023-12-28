@@ -1,6 +1,13 @@
 pub type Num = i128;
 pub type Var = String;
 
+
+
+#[derive(Debug, Clone)]
+pub enum Operator{
+    Add,Sub,Mul//,Div
+}
+
 #[derive(Debug, Clone)]
 pub enum Statement<D> {
     Assign (Var, Box<Aexpr<D>>),
@@ -14,9 +21,10 @@ pub enum Statement<D> {
 pub enum Aexpr<D>  {
     Num  (D),
     Var  (Var),
-    Add  (Box<Aexpr<D>>, Box<Aexpr<D>>),
-    Mul (Box<Aexpr<D>>, Box<Aexpr<D>>),
-    Sub  (Box<Aexpr<D>>, Box<Aexpr<D>>),
+    BinOp (Operator, Box<Aexpr<D>>, Box<Aexpr<D>>),
+    // Add  (Box<Aexpr<D>>, Box<Aexpr<D>>),
+    // Mul (Box<Aexpr<D>>, Box<Aexpr<D>>),
+    // Sub  (Box<Aexpr<D>>, Box<Aexpr<D>>),
 }
 
 #[derive(Debug, Clone)]

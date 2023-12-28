@@ -80,7 +80,8 @@ fn parse_assign_statement(cst: &cst::AssignStatements) -> ast::Statement<Num> {
         cst::AssignStatements::AddAssign(x, a) => 
             ast::Statement::Assign(
                 x.clone(),
-                Box::new(ast::Aexpr::Add(
+                Box::new(ast::Aexpr::BinOp(
+                    ast::Operator::Add,
                     Box::new(ast::Aexpr::Var(x.clone())), 
                     Box::new(parse_aexpr(a))
                 ))
@@ -88,7 +89,8 @@ fn parse_assign_statement(cst: &cst::AssignStatements) -> ast::Statement<Num> {
         cst::AssignStatements::SubAssign(x, a) => 
             ast::Statement::Assign(
                 x.clone(),
-                Box::new(ast::Aexpr::Sub(
+                Box::new(ast::Aexpr::BinOp(
+                    ast::Operator::Sub,
                     Box::new(ast::Aexpr::Var(x.clone())), 
                     Box::new(parse_aexpr(a))
                 ))
@@ -96,7 +98,8 @@ fn parse_assign_statement(cst: &cst::AssignStatements) -> ast::Statement<Num> {
         cst::AssignStatements::MulAssign(x, a) => 
             ast::Statement::Assign(
                 x.clone(),
-                Box::new(ast::Aexpr::Mul(
+                Box::new(ast::Aexpr::BinOp(
+                    ast::Operator::Mul,
                     Box::new(ast::Aexpr::Var(x.clone())), 
                     Box::new(parse_aexpr(a))
                 ))
@@ -106,17 +109,20 @@ fn parse_assign_statement(cst: &cst::AssignStatements) -> ast::Statement<Num> {
 fn parse_aexpr(cst: &cst::Aexpr) -> ast::Aexpr<Num> {
     match cst {
         cst::Aexpr::Add(a, t) => 
-            ast::Aexpr::Add(
+            ast::Aexpr::BinOp(
+                ast::Operator::Add,
                 Box::new(parse_aexpr(a)),
                 Box::new(parse_term(t))
             ),
         cst::Aexpr::Sub(a, t) => 
-            ast::Aexpr::Sub(
+            ast::Aexpr::BinOp(
+                ast::Operator::Sub,
                 Box::new(parse_aexpr(a)),
                 Box::new(parse_term(t))
             ),
         cst::Aexpr::Term(t) => parse_term(t),
-        cst::Aexpr::Opposite(f) => ast::Aexpr::Sub(
+        cst::Aexpr::Opposite(f) => ast::Aexpr::BinOp(
+            ast::Operator::Sub,
             Box::new(ast::Aexpr::Num(0.into())),
             Box::new(parse_factor(&f))
         ),
@@ -126,7 +132,8 @@ fn parse_aexpr(cst: &cst::Aexpr) -> ast::Aexpr<Num> {
 fn parse_term(cst: &cst::Term) -> ast::Aexpr<Num> {
     match cst {
         cst::Term::Mul(t, f) => 
-            ast::Aexpr::Mul(
+            ast::Aexpr::BinOp(
+                ast::Operator::Mul,
                 Box::new(parse_term(t)),
                 Box::new(parse_factor(f))
             ),

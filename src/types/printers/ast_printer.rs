@@ -1,6 +1,15 @@
 use std::fmt::Display;
-use crate::types::ast::{Aexpr, Bexpr, Statement};
+use crate::types::ast::{Aexpr, Bexpr, Statement, Operator};
 
+impl Display for Operator{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Operator::Add => write!(f, "+"),
+            Operator::Sub => write!(f, "-"),
+            Operator::Mul => write!(f, "*"),
+        }
+    }
+}
 
 impl<N: Display> Display for Aexpr<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -9,12 +18,8 @@ impl<N: Display> Display for Aexpr<N> {
                 write!(f, "{}", n),
             Aexpr::Var(x) => 
                 write!(f, "{}", x),
-            Aexpr::Add(a1, a2) => 
-                write!(f, "({} + {})", a1, a2),
-            Aexpr::Mul(a1, a2) => 
-                write!(f, "({} * {})", a1, a2),            
-            Aexpr::Sub(a1, a2) => 
-               write!(f, "({} - {})", a1, a2),
+            Aexpr::BinOp(op, a1, a2) =>
+                write!(f, "({a1} {op} {a2})"),
         }
     }
 }

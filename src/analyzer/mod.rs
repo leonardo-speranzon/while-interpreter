@@ -1,12 +1,6 @@
 mod sign_domain;
 
-use std::ops::{Add, Sub};
-
-use crate::{interpreter::types::State, types::ast::{Statement, Aexpr, Bexpr}};
-
-enum Operators{
-    Add,Sub,Mul//,Div
-}
+use crate::{interpreter::types::State, types::ast::{Statement, Aexpr, Bexpr, Operator}};
 
 #[derive(PartialEq)]
 struct AbstractState<D>(Option<State<D>>);
@@ -34,8 +28,8 @@ trait AbstractDomain : PartialOrd + Clone + Sized {
     fn lub(&self, other: &Self) -> Self;
     fn glb(&self, other: &Self) -> Self;
 
-    fn abstract_operator(op: Operators, lhs: &Self, rhs: &Self) -> Self;
-    fn backward_abstract_operator(op: Operators, lhs: &Self, rhs: &Self, res: &Self) -> (Self, Self);
+    fn abstract_operator(op: &Operator, lhs: &Self, rhs: &Self) -> Self;
+    fn backward_abstract_operator(op: &Operator, lhs: &Self, rhs: &Self, res: &Self) -> (Self, Self);
     // fn widening();
     // fn narrowing();
 }
@@ -65,13 +59,11 @@ impl<D: AbstractDomain> StaticAnalyzer<D> for MyAnalyzer{
                 },
                 AbstractState(None) => D::bottom(),
             },
-            Aexpr::Add(a1, a2) => {
+            Aexpr::BinOp(op, a1, a2 ) => {
                 let n1 = Self::eval_aexpr(a1, s);
                 let n2 = Self::eval_aexpr(a2, s);
-                D::abstract_operator(Operators::Add, &n1, &n2)
-            },
-            Aexpr::Mul(a1, a2) => todo!(),
-            Aexpr::Sub(a1, a2) => todo!(),
+                D::abstract_operator(op, &n1, &n2)
+            }
         }
     }
 
@@ -118,12 +110,12 @@ impl<D: AbstractDomain> StaticAnalyzer<D> for MyAnalyzer{
                     AbstractState(None) => s
                 }
             },
-            Aexpr::Add(a1, a2) => {
+            Aexpr::BinOp(op, a1, a2)=>{
                 let n1 = Self::eval_aexpr(a1, &s);
                 let n2 = Self::eval_aexpr(a2, &s);
 
                 let (d1,d2) = D::backward_abstract_operator(
-                    Operators::Add,
+                    op,
                     &n1,
                     &n2,
                     dom
@@ -132,9 +124,7 @@ impl<D: AbstractDomain> StaticAnalyzer<D> for MyAnalyzer{
                 let s = Self::refine_aexpr(a1, s,&d1);
                 let s = Self::refine_aexpr(a2, s,&d2);                
                 s
-            },
-            Aexpr::Mul(_, _) => todo!(),
-            Aexpr::Sub(_, _) => todo!(),
+            }
         }
     }
 }
