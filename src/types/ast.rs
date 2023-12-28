@@ -22,9 +22,6 @@ pub enum Aexpr<D>  {
     Num  (D),
     Var  (Var),
     BinOp (Operator, Box<Aexpr<D>>, Box<Aexpr<D>>),
-    // Add  (Box<Aexpr<D>>, Box<Aexpr<D>>),
-    // Mul (Box<Aexpr<D>>, Box<Aexpr<D>>),
-    // Sub  (Box<Aexpr<D>>, Box<Aexpr<D>>),
 }
 
 #[derive(Debug, Clone)]
