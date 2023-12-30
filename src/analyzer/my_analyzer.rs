@@ -1,8 +1,11 @@
-use crate::types::ast::{Statement, Aexpr, Bexpr};
+use std::{collections::HashMap, path::Display};
 
-use super::{AbstractDomain, AbstractState, StaticAnalyzer};
+use iter_tools::Itertools;
 
-struct MyAnalyzer{}
+use crate::{types::ast::{Statement, Aexpr, Bexpr}, analyzer::printers::map_to_str};
+
+use super::{AbstractDomain, AbstractState, StaticAnalyzer, program::{Label, Command, Program, Arc}};
+pub struct MyAnalyzer{}
 
 
 impl<D: AbstractDomain> StaticAnalyzer<D> for MyAnalyzer{
@@ -32,9 +35,13 @@ impl<D: AbstractDomain> StaticAnalyzer<D> for MyAnalyzer{
                 let n1 = Self::eval_aexpr(a1, &s);
                 let n2 = Self::eval_aexpr(a2, &s);
                 let dom = n1.glb(&n2);
-                let s = Self::refine_aexpr(a1, s, &dom);
-                let s = Self::refine_aexpr(a2, s, &dom);
-                s
+                // let s = Self::refine_aexpr(a1, s, &dom);
+                // let s = Self::refine_aexpr(a2, s, &dom);
+                if dom == D::bottom() {
+                    AbstractState::bottom()
+                }else{
+                    s   
+                }
             },
             Bexpr::LessEq(a1, a2) => {
                 // let n1 = Self::eval_aexpr(a1, &s);
@@ -46,9 +53,10 @@ impl<D: AbstractDomain> StaticAnalyzer<D> for MyAnalyzer{
                 todo!()
             },
             Bexpr::Not(b) => {
-                // let adw = Self::eval_bexpr(b, &s);
+                // let dom: AbstractState<D> = Self::eval_bexpr(b, &s);
+
                 // let s = s.diff(adw);
-                todo!()
+                AbstractState::top().glb(&s)
             },
             Bexpr::And(_, _) => todo!(),
         }
@@ -96,5 +104,65 @@ impl<D: AbstractDomain> StaticAnalyzer<D> for MyAnalyzer{
             }
         }
     }
+
+    fn analyze(prog: Program<D>, init_state: AbstractState<D>) -> HashMap<Label, AbstractState<D>> {
+        let mut all_state: HashMap<Label, AbstractState<D>> = HashMap::new();
+
+        for i in 0..=(prog.labels_num-1) {
+            all_state.insert(i, AbstractState::bottom());
+        }
+        all_state.insert(prog.entry, init_state);
+
+
+        let iteration_num = 5;
+
+        println!("\nINITIAL STATES:\n{}\n", map_to_str(&all_state));
+        for i in 0..iteration_num {
+            all_state = make_iteration(&prog, all_state);
+            println!("\nITERATION {}:\n{:?}\n",i+1, map_to_str(&all_state));
+        }
+
+        all_state
+    }
 }
 
+
+fn make_iteration<D: AbstractDomain>(prog: &Program<D>, states: HashMap<Label, AbstractState<D>>) -> HashMap<Label, AbstractState<D>>{
+    let mut all_states: HashMap<Label, AbstractState<D>> = HashMap::new();
+    for i in 0..=(prog.labels_num-1) {
+        if i == prog.entry { all_states.insert(i, states.get(&i).unwrap().clone()); continue; }
+        let arcs = get_entering_arcs(prog, i);
+        let mut new_state = AbstractState::bottom();
+        // println!("label {i} entering arcs:{:?}", &arcs);
+        for (l,cmd,_) in arcs {
+            match  states.get(l) {
+                Some(s) => new_state = new_state.lub(apply_cmd(cmd, s)),
+                None => panic!("Missing AbsState for label {l}"),
+            };
+        }
+        // println!("label {i} computed state{:?}", &new_state);
+        all_states.insert(i, new_state);
+    };
+    all_states
+}
+
+fn apply_cmd<D: AbstractDomain>(cmd: &Command<D>, old_state: &AbstractState<D>) -> AbstractState<D>{
+    let mut state = old_state.clone();
+    match cmd {
+        Command::Assignment(x, a) => {
+            let aexpr_dom = MyAnalyzer::eval_aexpr(a, &state); //FIXME Self::
+            // println!("aexpr_dom: {:?}", aexpr_dom);
+            state.set(x.to_string(), aexpr_dom);
+        },
+        Command::Test(b) => {
+            state = MyAnalyzer::eval_bexpr(b, state); //FIXME Self::
+            println!("Apply test: {b} -> {old_state} -> {state}")
+        },
+    };
+    // println!("apply_cmd: {:?}", state);
+    state
+}
+
+fn get_entering_arcs<D>(prog: &Program<D>, label: Label) -> Vec<&Arc<D>>{
+    prog.arcs.iter().filter(|(_,_,l)|l==&label).collect()
+}

@@ -1,19 +1,37 @@
-use crate::types::ast::Operator;
+use std::fmt::Display;
 
-use super::AbstractDomain;
+use crate::{types::ast::{Operator, Num}, analyzer::AbstractDomain};
 
-#[derive(PartialEq,Clone)]
-enum Sign{
+
+
+#[derive(Debug,PartialEq,Clone)]
+pub enum Sign{
     Top,
     Bottom,
     Positive,
     Zero,
     Negative,
 }
-
+impl Display for Sign{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
 impl PartialOrd for Sign{
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         todo!()
+    }
+}
+
+impl From<Num> for Sign{
+    fn from(value: Num) -> Self {
+        if value > 0{
+            Sign::Positive
+        } else if value == 0 {
+            Sign::Zero
+        } else {
+            Sign::Negative
+        }
     }
 }
 
@@ -27,7 +45,12 @@ impl AbstractDomain for Sign{
     }
 
     fn lub(&self, other: &Self) -> Self {
-        todo!()
+        match (self, other) {
+            (Sign::Bottom, s2) => s2.clone(),
+            (s1, Sign::Bottom) => s1.clone(),
+            (s1 ,s2) if s1 == s2 => s1.clone(),
+            (_, _) => Sign::Top
+        }
     }
 
     fn glb(&self, other: &Self) -> Self {
@@ -53,7 +76,9 @@ impl AbstractDomain for Sign{
                 (Sign::Bottom, _) | (_, Sign::Bottom)  => Sign::Bottom,
                 (Sign::Top, _) | (_, Sign::Top )=> Sign::Top,
 
-                (Sign::Zero, s) | (s, Sign::Zero) => s.clone(),
+                (Sign::Zero, Sign::Negative) => Sign::Positive,
+                (Sign::Zero, Sign::Positive) => Sign::Negative,
+                (s, Sign::Zero) => s.clone(),
                 
                 (Sign::Negative, Sign::Negative) => Sign::Top,
                 (Sign::Positive, Sign::Positive) => Sign::Top,
