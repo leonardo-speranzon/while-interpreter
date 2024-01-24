@@ -16,6 +16,10 @@ fn translate_aexpr<D:AbstractDomain>(a: Aexpr<Num>) -> Aexpr<D>{
     match a {
         Aexpr::Num(n) => Aexpr::Num(D::from(n)),
         Aexpr::Var(x) => Aexpr::Var(x),
+        Aexpr::PreInc(x) => Aexpr::PreInc(x),
+        Aexpr::PreDec(x) => Aexpr::PreDec(x),
+        Aexpr::PostInc(x) => Aexpr::PostInc(x),
+        Aexpr::PostDec(x) => Aexpr::PostDec(x),
         Aexpr::BinOp(op, a1, a2) => 
             Aexpr::BinOp(op, Box::new(translate_aexpr(*a1)), Box::new(translate_aexpr(*a2))),
     }

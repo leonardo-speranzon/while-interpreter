@@ -14,67 +14,87 @@ use crate::{interpreter::types::State, types::ast::{Statement, Aexpr, Bexpr, Ope
 
 use self::{abs_ast::abstract_program, program::{Program, Label}};
 
-#[derive(Debug, PartialEq, Clone)]
-pub struct AbstractState<D>(Option<State<D>>);
+pub trait AbstractState<D>: Debug + Display + PartialEq + Clone {
+    fn bottom() -> Self;
+    fn top() -> Self;
+    fn lub(self, other: Self) -> Self;
+    fn glb(self, other: &Self) -> Self;
+    fn get(&self, k: &str) -> D;
+    fn set(&mut self, k: String, v: D);
+}
 
-impl<D: AbstractDomain> AbstractState<D> {
-    pub fn bottom() -> Self{
-        AbstractState(None)
+#[derive(Debug, PartialEq, Clone)]
+pub struct HashMapState<D>(Option<State<D>>);
+
+impl<D: AbstractDomain> AbstractState<D> for HashMapState<D>  {
+    fn bottom() -> Self{
+        HashMapState(None)
     }
-    pub fn top() -> Self{
-        AbstractState(Some(State::new()))
+    fn top() -> Self{
+        HashMapState(Some(State::new()))
     }    
-    pub fn lub(self, other: Self) -> Self { 
+    fn lub(self, other: Self) -> Self { 
         // print!("LUB {:?} - {:?} -> ",self,other);
         let new_s=  match (self, other) {
-            (AbstractState(Some(mut s1)),AbstractState(Some(s2))) => { 
+            (HashMapState(Some(mut s1)),HashMapState(Some(s2))) => { 
                 s1 = s1.into_iter().filter_map(|(k,v)|{
                     match s2.get(&k) {
                         Some(d) => Some((k, v.lub(d))),
                         None => None,
                     }
                 }).collect(); 
-                AbstractState(Some(s1))
+                HashMapState(Some(s1))
             },
-            (AbstractState(Some(s)), _) | (_, AbstractState(Some(s))) => AbstractState(Some(s)),
-            (_, _) => AbstractState(None)
+            (HashMapState(Some(s)), _) | (_, HashMapState(Some(s))) => HashMapState(Some(s)),
+            (_, _) => HashMapState(None)
         };
         // println!("{:?}", new_s );
         new_s
     } 
-    pub fn glb(self, other: &Self) -> Self { 
+    fn glb(self, other: &Self) -> Self { 
         match (self, other) {
-            (AbstractState(Some(mut s1)),AbstractState(Some(s2))) => {
+            (HashMapState(Some(mut s1)),HashMapState(Some(s2))) => {
                 for (k,v) in s2.into_iter() {
                     let new_v = match s1.get(k) {
                         Some(d) => v.glb(d),
                         None => v.clone(),
                     };
                     if new_v == D::bottom(){
-                        return AbstractState(None)
+                        return HashMapState(None)
                     }
                     s1.insert(k.to_string(), new_v);
                 }
-                AbstractState(Some(s1))
+                HashMapState(Some(s1))
             },
-            (_,_) => AbstractState(None)
+            (_,_) => HashMapState(None)
+        }
+    }
+    fn get(&self, k: &str) -> D {
+        match self {
+            HashMapState(Some(s)) => {
+                match s.get(k) {
+                    Some(n) => n.clone(),
+                    None => D::top(),
+                }
+            },
+            HashMapState(None) =>  D::bottom(),
         }
     }
     fn set(&mut self, k: String, v: D) {
         match self {
-            AbstractState(Some(s)) => {
+            HashMapState(Some(s)) => {
                 if v == D::bottom() {
                     self.0 = None
                 }else {
                     s.insert(k, v);
                 }
             },
-            AbstractState(None) => (),
+            HashMapState(None) => (),
         }
     }
 }
 
-impl<D: AbstractDomain> PartialOrd for AbstractState<D> {
+impl<D: AbstractDomain> PartialOrd for HashMapState<D> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         todo!()
     }
@@ -92,17 +112,17 @@ pub trait AbstractDomain : Debug + Display + PartialOrd + Clone + Sized + From<N
     // fn narrowing();
 }
 
-pub trait StaticAnalyzer<D: AbstractDomain> {
-    fn eval_aexpr(a: &Aexpr<D>, s: &AbstractState<D>)-> D;
-    fn refine_aexpr(a: &Aexpr<D>,s:AbstractState<D>, dom: &D) -> AbstractState<D>;
-    fn eval_bexpr(b: &Bexpr<D>, s: AbstractState<D>)-> AbstractState<D>;
+pub trait StaticAnalyzer<D: AbstractDomain, B: AbstractState<D> = HashMapState<D>> {
+    fn eval_aexpr(a: &Aexpr<D>, s: &B)-> D;
+    // fn refine_aexpr(a: &Aexpr<D>,s:B, dom: &D) -> B;
+    fn eval_bexpr(b: &Bexpr<D>, s: B)-> B;
 
     fn init(ast: Statement<Num>) -> Program<D> {
         let p = Program::from(ast);
         println!("\n{:?}\n\n", p);
         abstract_program(p)
     }
-    fn analyze(p: Program<D>, init_state: AbstractState<D>) -> HashMap<Label, AbstractState<D>>;
+    fn analyze(p: Program<D>, init_state: B) -> HashMap<Label, B>;
     
 }
 

@@ -21,6 +21,10 @@ pub enum Statement<D> {
 pub enum Aexpr<D>  {
     Num  (D),
     Var  (Var),
+    PreInc (Var),
+    PreDec (Var),
+    PostInc (Var),
+    PostDec (Var),
     BinOp (Operator, Box<Aexpr<D>>, Box<Aexpr<D>>),
 }
 

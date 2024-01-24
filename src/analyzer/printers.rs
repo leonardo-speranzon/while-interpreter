@@ -1,12 +1,12 @@
-use std::{fmt::{Display, write, Debug}, collections::HashMap};
+use std::{fmt::Display, collections::HashMap};
 
 use iter_tools::Itertools;
 
-use super::{AbstractState, domains::sign_domain::Sign, program::Label, AbstractDomain};
+use super::{program::Label, HashMapState};
 
 
 
-impl<D: Display> Display for AbstractState<D> {
+impl<D: Display> Display for HashMapState<D> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.0 {
             Some(s) => {
