@@ -7,6 +7,7 @@ impl Display for Operator{
             Operator::Add => write!(f, "+"),
             Operator::Sub => write!(f, "-"),
             Operator::Mul => write!(f, "*"),
+            Operator::Div => write!(f, "÷"),
         }
     }
 }

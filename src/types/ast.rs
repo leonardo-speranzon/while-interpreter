@@ -5,7 +5,7 @@ pub type Var = String;
 
 #[derive(Debug, Clone)]
 pub enum Operator{
-    Add,Sub,Mul//,Div
+    Add,Sub,Mul,Div
 }
 
 #[derive(Debug, Clone)]

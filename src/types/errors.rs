@@ -10,5 +10,6 @@ pub enum ParserError {
 
 #[derive(Debug)]
 pub enum RuntimeError {
-    VariableNotInitialized(String)
+    VariableNotInitialized(String),
+    NotImplemented(String)
 }

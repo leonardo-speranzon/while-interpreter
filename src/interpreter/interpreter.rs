@@ -107,6 +107,7 @@ fn eval_aexpr(aexpr: &Aexpr<Num>, state: &State<Num>) -> Result<Num,RuntimeError
                 Operator::Add => n1 + n2,
                 Operator::Sub => n1 - n2,
                 Operator::Mul => n1 * n2,
+                Operator::Div => return Err(RuntimeError::NotImplemented("Division not implemented".to_string())),
             }
         }
     };

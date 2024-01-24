@@ -1,4 +1,4 @@
-use std::{fmt::{Display, write}, cmp::{min, max, Ordering}, ops::{Add, Sub, Mul}};
+use std::{fmt::Display, cmp::{min, max, Ordering}, ops::{Add, Div, Mul, Sub}};
 use crate::{types::ast::{Num, Operator}, analyzer::AbstractDomain};
 
 
@@ -96,6 +96,46 @@ impl Mul for ExtendedNum{
     }
     
 }
+
+impl Div for ExtendedNum{
+    type Output = ExtendedNum;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (ExtendedNum::PosInf, ExtendedNum::PosInf) => panic!(),
+            (ExtendedNum::PosInf, ExtendedNum::NegInf) => panic!(),
+            (ExtendedNum::NegInf, ExtendedNum::PosInf) => panic!(),
+            (ExtendedNum::NegInf, ExtendedNum::NegInf) => panic!(),
+            (ExtendedNum::PosInf, ExtendedNum::Num(n)) => match n.cmp(&0) {
+                Ordering::Less => ExtendedNum::NegInf,
+                Ordering::Equal => ExtendedNum::PosInf,
+                Ordering::Greater => ExtendedNum::PosInf,
+            },
+            (ExtendedNum::NegInf, ExtendedNum::Num(n)) => match n.cmp(&0) {
+                Ordering::Less => ExtendedNum::PosInf,
+                Ordering::Equal => ExtendedNum::NegInf,
+                Ordering::Greater => ExtendedNum::NegInf,
+            },
+            (ExtendedNum::Num(n), ExtendedNum::PosInf) => match n.cmp(&0) {
+                Ordering::Less => ExtendedNum::NegInf,
+                Ordering::Equal => ExtendedNum::Num(0),
+                Ordering::Greater => ExtendedNum::PosInf,
+            },
+            (ExtendedNum::Num(n), ExtendedNum::NegInf) => match n.cmp(&0) {
+                Ordering::Less => ExtendedNum::PosInf,
+                Ordering::Equal => ExtendedNum::Num(0),
+                Ordering::Greater => ExtendedNum::NegInf,
+            },
+            (ExtendedNum::Num(n), ExtendedNum::Num(0)) => match n.cmp(&0)  {
+                Ordering::Less => ExtendedNum::NegInf,
+                Ordering::Equal => panic!(),
+                Ordering::Greater => ExtendedNum::PosInf,
+            },
+            (ExtendedNum::Num(n1), ExtendedNum::Num(n2)) => ExtendedNum::Num(n1/n2),
+        }
+    }
+}
+
 
 impl Display for ExtendedNum {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -211,6 +251,51 @@ impl AbstractDomain for Interval{
                     
                 }
             },
+            Operator::Div => {
+                match (lhs,rhs) {
+                    (Interval::Bottom,_) | (_, Interval::Bottom) => Interval::Bottom,
+                    (Interval::Top, Interval::Top) => Interval::Top,
+                    (Interval::Top, Interval::Pair(a, b))  =>{
+                        if *a == ExtendedNum::Num(0) && *b == ExtendedNum::Num(0){
+                            Interval::Bottom
+                        } else {
+                            Interval::Top
+                        }
+                    },
+                    (Interval::Pair(a, b), Interval::Top) =>{
+                        if *a == ExtendedNum::Num(0) && *b == ExtendedNum::Num(0){
+                            Interval::Pair(ExtendedNum::Num(0), ExtendedNum::Num(0))
+                        } else {
+                            Interval::Top
+                        }
+                    },                   
+                    (n1@Interval::Pair(a, b), n2@Interval::Pair(c, d)) => {
+                        if ExtendedNum::Num(1)<=*c {
+                            Interval::new(
+                                min(a.clone()/c.clone(), a.clone()/d.clone()),
+                                max(b.clone()/c.clone(), b.clone()/d.clone())
+                            )
+                        }else if *d <= ExtendedNum::Num(-1) {
+                            Interval::new(
+                                min(b.clone()/c.clone(), b.clone()/d.clone()),
+                                max(a.clone()/c.clone(), a.clone()/d.clone())
+                            )
+                        } else {
+                            let d1 = Interval::abstract_operator(
+                                &Operator::Div, 
+                                n1,
+                                &n2.glb(&Interval::new(ExtendedNum::Num(1), ExtendedNum::PosInf))
+                            );
+                            let d2 = Interval::abstract_operator(
+                                &Operator::Div, 
+                                n1,
+                                &n2.glb(&Interval::new(ExtendedNum::NegInf, ExtendedNum::Num(-1)))
+                            );
+                            d1.lub(&d2)
+                        }
+                    }//
+                }
+            }
         }
     }
 

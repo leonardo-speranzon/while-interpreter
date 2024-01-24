@@ -98,6 +98,21 @@ impl AbstractDomain for Sign{
                 (Sign::Positive, Sign::Negative) => Sign::Negative,
                 (Sign::Negative, Sign::Positive) => Sign::Negative,                    
             },
+            Operator::Div => match (lhs, rhs) {
+                (Sign::Bottom, _) | (_, Sign::Bottom)  => Sign::Bottom,
+                
+                (_, Sign::Zero)  => Sign::Bottom,
+                (Sign::Zero, _)  => Sign::Zero,
+
+                (Sign::Top, _) | (_, Sign::Top )=> Sign::Top,
+                
+                (Sign::Negative, Sign::Negative) => Sign::Positive,
+                (Sign::Positive, Sign::Positive) => Sign::Positive,
+                
+                (Sign::Positive, Sign::Negative) => Sign::Negative,
+                (Sign::Negative, Sign::Positive) => Sign::Negative,  
+                
+            },
         }
     }
 
@@ -107,6 +122,7 @@ impl AbstractDomain for Sign{
             Operator::Add => todo!(),
             Operator::Sub => todo!(),
             Operator::Mul => todo!(),
+            Operator::Div => todo!(),
         }
     }
 }

@@ -69,6 +69,8 @@ fn main() {
         Ok(state) => println!("EVAL STM: {:?}", state),
         Err(RuntimeError::VariableNotInitialized(x)) =>
             println!("Runtime error: variable '{}' used before initialization", x),
+        Err(RuntimeError::NotImplemented(str)) =>
+            println!("{str}")
     }
 }
 
