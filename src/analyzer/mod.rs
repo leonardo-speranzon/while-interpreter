@@ -2,12 +2,14 @@
 pub mod domains{
     pub mod sign_domain;
     pub mod interval_domain;
+    pub mod extended_num;
 }
 pub mod my_analyzer;
 mod abs_ast;
 pub mod program;
 pub mod printers;
 
+use std::ops::{Add, Div, Mul, Sub};
 use std::{collections::HashMap, fmt::Display};
 use std::fmt::Debug;
 use crate::{interpreter::types::State, types::ast::{Statement, Aexpr, Bexpr, Operator, Num}};
@@ -100,20 +102,34 @@ impl<D: AbstractDomain> PartialOrd for HashMapState<D> {
     }
 }
 
-pub trait AbstractDomain : Debug + Display + PartialOrd + Clone + Sized + From<Num> {
+pub trait AbstractDomain : Debug + Display + PartialOrd + Clone + Sized + From<Num>
+                           + Add<Output=Self> + Sub<Output=Self> + Mul<Output=Self> + Div<Output=Self>  {
     fn bottom() -> Self;
     fn top() -> Self;
     fn lub(&self, other: &Self) -> Self;
     fn glb(&self, other: &Self) -> Self;
 
-    fn abstract_operator(op: &Operator, lhs: &Self, rhs: &Self) -> Self;
+    fn abstract_operator(op: &Operator, lhs: &Self, rhs: &Self) -> Self {
+        match op {
+            Operator::Add => lhs.clone() + rhs.clone(),
+            Operator::Sub => lhs.clone() - rhs.clone(),
+            Operator::Mul => lhs.clone() * rhs.clone(),
+            Operator::Div => lhs.clone() / rhs.clone(),
+        }
+    }
     fn backward_abstract_operator(op: &Operator, lhs: &Self, rhs: &Self, res: &Self) -> (Self, Self);
     // fn widening();
     // fn narrowing();
+
+    fn gte(lb: &Self) -> Self;
+    fn lte(ub: &Self) -> Self;
 }
 
+
+
+
 pub trait StaticAnalyzer<D: AbstractDomain, B: AbstractState<D> = HashMapState<D>> {
-    fn eval_aexpr(a: &Aexpr<D>, s: &B)-> D;
+    fn eval_aexpr(a: &Aexpr<D>, s: B)-> (D, B);
     // fn refine_aexpr(a: &Aexpr<D>,s:B, dom: &D) -> B;
     fn eval_bexpr(b: &Bexpr<D>, s: B)-> B;
 
