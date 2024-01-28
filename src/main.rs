@@ -83,6 +83,7 @@ struct Config {
     print_pretty_cst: bool,
     print_ast: bool,
     print_pretty_ast: bool,
+    lower: Num
 }
 
 impl Config {
@@ -100,6 +101,7 @@ impl Config {
             .arg(Arg::new("pretty-ast").long("pretty-ast").short('A').help("Print pretty ast").action(ArgAction::SetTrue))
             .arg(Arg::new("cst")       .long("cst")       .short('c').help("Print raw ast")   .action(ArgAction::SetTrue))
             .arg(Arg::new("pretty-cst").long("pretty-cst").short('C').help("Print pretty ast").action(ArgAction::SetTrue))
+            .arg(Arg::new("lower").long("lower-bound").short('l').help("Lower bound").value_parser(clap::value_parser!(Num)).action(ArgAction::Set).required(true))
             .get_matches();
         
         Config{
@@ -110,6 +112,7 @@ impl Config {
             print_pretty_cst:matches.get_flag("pretty-cst"),
             print_ast: matches.get_flag("ast"),
             print_pretty_ast:matches.get_flag("pretty-ast"),
+            lower: *matches.get_one("lower").unwrap()
         }
     }
 }

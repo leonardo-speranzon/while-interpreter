@@ -144,7 +144,7 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for MyAnalyzer<
 }
 
 enum StepType {
-    Step,
+    NormalStep,
     WideningStep,
     NarrowingStep
 }
@@ -171,7 +171,7 @@ impl<D: AbstractDomain, B: AbstractState<D>> MyAnalyzer<D,B>{
                     .expect(&format!("Missing AbsState for label {i}"))
                     .clone();
                 new_state = match step_type {
-                    StepType::Step => new_state,
+                    StepType::NormalStep => new_state,
                     StepType::WideningStep => old_state.widening(new_state),
                     StepType::NarrowingStep => old_state.narrowing(new_state),
                 }

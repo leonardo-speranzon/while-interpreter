@@ -22,12 +22,13 @@ impl BoundedInterval {
             return BoundedInterval::Range(lower, lower);
         }
 
-        lower = if lower < LOWER {ExtendedNum::NegInf}
+        lower =  if lower < LOWER {ExtendedNum::NegInf}
             else if lower <= UPPER {lower}
             else { UPPER };
-        upper = if upper < LOWER { LOWER }
+        upper =  if upper < LOWER { LOWER }
             else if upper <= UPPER {upper}
             else { ExtendedNum::PosInf };
+            
         if lower == ExtendedNum::NegInf && upper == ExtendedNum::PosInf {
             BoundedInterval::Top
         } else if lower > upper {
@@ -40,7 +41,7 @@ impl BoundedInterval {
 
 
 impl PartialOrd for BoundedInterval{
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, _other: &Self) -> Option<std::cmp::Ordering> {
         todo!()
     }
 }
@@ -79,7 +80,7 @@ impl AbstractDomain for BoundedInterval{
         }
     }
 
-    fn backward_abstract_operator(op: &Operator, lhs: &Self, rhs: &Self, res: &Self) -> (Self, Self) {
+    fn backward_abstract_operator(_op: &Operator, _lhs: &Self, _rhs: &Self, _res: &Self) -> (Self, Self) {
         todo!()
     }
 
