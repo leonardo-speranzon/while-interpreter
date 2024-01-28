@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, fmt::Display, ops::{Add, Div, Mul, Sub}};
+use std::{fmt::Display, ops::{Add, Div, Mul, Sub}};
 use crate::{types::ast::{Operator, Num}, analyzer::AbstractDomain};
 
 
@@ -17,7 +17,7 @@ impl Display for Sign{
     }
 }
 impl PartialOrd for Sign{
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, _other: &Self) -> Option<std::cmp::Ordering> {
         todo!()
     }
 }
@@ -58,8 +58,8 @@ impl AbstractDomain for Sign{
             (_, _) => Sign::Bottom
         }
     }
-
-    fn backward_abstract_operator(op: &Operator, lhs: &Self, rhs: &Self, res: &Self) -> (Self, Self) {
+    
+    fn backward_abstract_operator(_op: &Operator, _lhs: &Self, _rhs: &Self, _res: &Self) -> (Self, Self) {
         todo!()
     }
 

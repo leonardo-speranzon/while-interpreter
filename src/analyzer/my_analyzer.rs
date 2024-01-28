@@ -80,6 +80,8 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for MyAnalyzer<
             
             Bexpr::Not(b) => {
                 match *b.clone() { 
+                    Bexpr::True => AbstractState::bottom(),
+                    Bexpr::False => s,
                     Bexpr::Equal(a1, a2) => {
                         let (n1, s1) = Self::eval_aexpr(&a1, s);
                         let (n2, s2) = Self::eval_aexpr(&a2, s1);
@@ -93,24 +95,16 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for MyAnalyzer<
                     Bexpr::LessEq(a1, a2) => {
                         match (*a1.clone(),*a2.clone()) {
                             (Aexpr::Num(c), Aexpr::Var(x)) | (Aexpr::Var(x), Aexpr::Num(c)) => 
-                                test_eq_case_1(s, x, c),
+                                test_gt_case_1(s, x, c),
                             (Aexpr::Var(x), Aexpr::Var(y)) => 
                                 test_gt_case_2(s, x, y),
                             (_, _) => s
                         } 
                     },
-                    Bexpr::True => todo!(),
-                    Bexpr::False => todo!(),
-                    Bexpr::Not(_) => todo!(),
+                    Bexpr::Not(b) => Self::eval_bexpr(&b, s),
                     Bexpr::And(_, _) => todo!(),
                 }
             },
-            // Bexpr::Not(Box<Bexpr::False>) => todo!(),
-            // Bexpr::Not(Bexpr::True) => todo!(),
-            // Bexpr::Not(Bexpr::Equal(_, _)) => todo!(),
-            // Bexpr::Not(Bexpr::LessEq(, )) => todo!(),
-            // Bexpr::Not(Bexpr::Not(_)) => todo!(),
-            // Bexpr::Not(Bexpr::And(_, _)) => todo!(),
         }
     }
 
@@ -127,12 +121,21 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for MyAnalyzer<
         let mut iteration_num= 1;
 
         println!("\nINITIAL STATES:\n{}\n", map_to_str(&all_state));
-        let mut new_all_state = Self::make_iteration(&prog, all_state.clone());
+        let mut new_all_state = Self::make_iteration(&prog, all_state.clone(), StepType::WideningStep);
         while new_all_state != all_state {
             all_state = new_all_state;
-            println!("ITERATION {}:\n{:?}\n",iteration_num, map_to_str(&all_state)); iteration_num+=1;
-            new_all_state = Self::make_iteration(&prog, all_state.clone()); 
+            println!("ITERATION (∇) {}:\n{:?}\n",iteration_num, map_to_str(&all_state)); iteration_num+=1;
+            new_all_state = Self::make_iteration(&prog, all_state.clone(), StepType::WideningStep); 
         }
+
+        let mut new_all_state = Self::make_iteration(&prog, all_state.clone(), StepType::NarrowingStep);
+        while new_all_state != all_state {
+            all_state = new_all_state;
+            println!("ITERATION (Δ) {}:\n{:?}\n",iteration_num, map_to_str(&all_state)); iteration_num+=1;
+            new_all_state = Self::make_iteration(&prog, all_state.clone(), StepType::NarrowingStep); 
+        }
+
+
         println!("\nFINAL STATES:\n{}\n", map_to_str(&all_state));
 
 
@@ -140,8 +143,14 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for MyAnalyzer<
     }
 }
 
+enum StepType {
+    Step,
+    WideningStep,
+    NarrowingStep
+}
+
 impl<D: AbstractDomain, B: AbstractState<D>> MyAnalyzer<D,B>{
-    fn make_iteration(prog: &Program<D>, states: HashMap<Label, B>) -> HashMap<Label, B>{
+    fn make_iteration(prog: &Program<D>, states: HashMap<Label, B>, step_type: StepType) -> HashMap<Label, B>{
         let mut all_states: HashMap<Label, B> = HashMap::new();
         for i in 0..=(prog.labels_num-1) {
             if i == prog.entry { all_states.insert(i, states.get(&i).unwrap().clone()); continue; }
@@ -154,18 +163,26 @@ impl<D: AbstractDomain, B: AbstractState<D>> MyAnalyzer<D,B>{
                     None => panic!("Missing AbsState for label {l}"),
                 };
             }
+
             if prog.widening_points.contains(&i) {
-                new_state = states
+                // print!("{} ∇ {} = ", states.get(&i).unwrap(), new_state);
+                let old_state = states
                     .get(&i)
                     .expect(&format!("Missing AbsState for label {i}"))
-                    .clone()
-                    .widening(new_state)
+                    .clone();
+                new_state = match step_type {
+                    StepType::Step => new_state,
+                    StepType::WideningStep => old_state.widening(new_state),
+                    StepType::NarrowingStep => old_state.narrowing(new_state),
+                }
+                // println!("{}", new_state);
             }
 
             all_states.insert(i, new_state);
         };
         all_states
     }
+
 
     fn apply_cmd(cmd: &Command<D>, old_state: &B) -> B{
         let mut state = old_state.clone();

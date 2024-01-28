@@ -28,6 +28,7 @@ pub trait AbstractState<D>: Debug + Display + PartialEq + Clone {
     fn get(&self, k: &str) -> D;
     fn set(&mut self, k: String, v: D);
     fn widening(self, other:Self) -> Self;
+    fn narrowing(self, other: Self) -> Self;
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -105,8 +106,23 @@ impl<D: AbstractDomain> AbstractState<D> for HashMapState<D>  {
             (None, s) | (s, None) => HashMapState(s),
             (Some(mut s1), Some(s2)) => {
                 for (key, value) in s2 {
-                    let d = match s1.get(&key) {
-                        Some(d) => d.clone().widening(value),
+                    let d = match s1.remove(&key) {
+                        Some(d) => d.widening(value),
+                        None => value,
+                    };
+                    s1.insert(key, d);
+                };
+                HashMapState(Some(s1))
+            },
+        }
+    }
+    fn narrowing(self, other: Self) -> Self {
+        match (self.0, other.0){
+            (None, s) | (s, None) => HashMapState(s),
+            (Some(mut s1), Some(s2)) => {
+                for (key, value) in s2 {
+                    let d = match s1.remove(&key) {
+                        Some(d) => d.narrowing(value),
                         None => value,
                     };
                     s1.insert(key, d);
@@ -136,15 +152,22 @@ pub trait AbstractDomain : Debug + Display + PartialOrd + Clone + Sized + From<N
             Operator::Add => lhs.clone() + rhs.clone(),
             Operator::Sub => lhs.clone() - rhs.clone(),
             Operator::Mul => lhs.clone() * rhs.clone(),
+            //  {
+            //     let res = lhs.clone() * rhs.clone();
+            //     println!("{lhs} * {rhs} = {res}");
+            //     res
+            // },
             Operator::Div => lhs.clone() / rhs.clone(),
         }
     }
     fn backward_abstract_operator(op: &Operator, lhs: &Self, rhs: &Self, res: &Self) -> (Self, Self);
 
     fn widening(self, other:Self) -> Self {
-        self.lub(&other) //If the domain doesn't need widening this is perfect
+        self.lub(&other) //Trivial widening
     }
-    // fn narrowing();
+    fn narrowing(self, other:Self) -> Self {
+        self //Trivial narrowing
+    }
 
     fn gte(lb: &Self) -> Self;
     fn lte(ub: &Self) -> Self;

@@ -113,7 +113,20 @@ impl AbstractDomain for BoundedInterval{
         }
     }
 
+    fn narrowing(self, other:Self) -> Self {
+        match(self, other){
+            (BoundedInterval::Bottom, _) | (_, BoundedInterval::Bottom) => Self::Bottom,
+            (BoundedInterval::Top, x) | (x, BoundedInterval::Top) => x,
 
+            (BoundedInterval::Range(a, b), BoundedInterval::Range(c, d)) =>{
+                let l = if a == ExtendedNum::NegInf { c } else { a };
+                let u = if b == ExtendedNum::PosInf { d } else { b };
+                BoundedInterval::new(l,u)
+            }
+        }
+    }
+
+    
 
     
 }
