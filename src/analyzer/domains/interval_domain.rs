@@ -6,7 +6,7 @@ use super::extended_num::ExtendedNum;
 
 #[derive(Debug,PartialEq,Clone, Copy)]
 pub enum Interval{
-    Pair(ExtendedNum,ExtendedNum),
+    Range(ExtendedNum,ExtendedNum),
     Top,
     Bottom,
 }
@@ -17,7 +17,7 @@ impl Interval {
         } else if lower > upper {
             Interval::Bottom
         } else {
-            Interval::Pair(lower,upper)
+            Interval::Range(lower,upper)
         }
     }
 }
@@ -28,7 +28,7 @@ impl Display for Interval{
         match self {
             Interval::Top => write!(f, "⊤"),
             Interval::Bottom => write!(f, "⊥"),
-            Interval::Pair(n1, n2) => write!(f, "[{n1},{n2}]"),
+            Interval::Range(n1, n2) => write!(f, "[{n1},{n2}]"),
         }
     }
 }
@@ -40,7 +40,7 @@ impl PartialOrd for Interval{
 
 impl From<Num> for Interval{
     fn from(value: Num) -> Self {
-        Interval::Pair(ExtendedNum::Num(value),ExtendedNum::Num(value))
+        Interval::Range(ExtendedNum::Num(value),ExtendedNum::Num(value))
     }
 }
 
@@ -52,7 +52,7 @@ impl AbstractDomain for Interval{
         match (self,other) {
             (Interval::Top,_) | (_, Interval::Top) => Interval::Top,
             (Interval::Bottom, i) | (i, Interval::Bottom) => i.clone(),
-            (Interval::Pair(a, b), Interval::Pair(c, d)) =>{
+            (Interval::Range(a, b), Interval::Range(c, d)) =>{
                 let lower = min(a,c).clone();
                 let upper = max(b,d).clone();
                 Interval::new(lower, upper)
@@ -64,7 +64,7 @@ impl AbstractDomain for Interval{
         match (self,other) {
             (Interval::Bottom,_) | (_, Interval::Bottom) => Interval::Bottom,
             (Interval::Top, i) | (i, Interval::Top) => i.clone(),
-            (Interval::Pair(a, b), Interval::Pair(c, d)) =>{
+            (Interval::Range(a, b), Interval::Range(c, d)) =>{
                 let lower = max(a,c).clone();
                 let upper = min(b,d).clone();
                 Interval::new(lower, upper)
@@ -78,7 +78,7 @@ impl AbstractDomain for Interval{
 
     fn gte(lb: &Self) -> Self {
         match lb {
-            Interval::Pair(a, b) => Interval::new(*a, ExtendedNum::PosInf),
+            Interval::Range(a, b) => Interval::new(*a, ExtendedNum::PosInf),
             Interval::Top => Interval::Top,
             Interval::Bottom =>  Interval::Bottom ,
         }
@@ -87,13 +87,24 @@ impl AbstractDomain for Interval{
 
     fn lte(ub: &Self) -> Self {
         match ub {
-            Interval::Pair(a, b) => Interval::new(ExtendedNum::NegInf, *b),
+            Interval::Range(a, b) => Interval::new(ExtendedNum::NegInf, *b),
             Interval::Top => Interval::Top,
             Interval::Bottom =>  Interval::Bottom ,
         }
     }
 
+    fn widening(self, other:Self) -> Self {
+        match(self, other){
+            (Interval::Bottom, x) | (x, Interval::Bottom) => x,
+            (Interval::Top, _) | (_, Interval::Top) => Interval::Top,
 
+            (Interval::Range(a, b), Interval::Range(c, d)) =>{
+                let l = if a<=c { a } else { ExtendedNum::NegInf };
+                let u = if b>=d { b } else { ExtendedNum::PosInf };
+                Interval::new(l,u)
+            }
+        }
+    }
 
     
 }
@@ -104,7 +115,7 @@ impl Add for Interval{
         match (self,rhs){
             (Interval::Bottom,_) | (_, Interval::Bottom) => Interval::Bottom,
             (Interval::Top, _) | (_, Interval::Top) => Interval::Top,
-            (Interval::Pair(a, b), Interval::Pair(c, d)) => {
+            (Interval::Range(a, b), Interval::Range(c, d)) => {
                 let lower = a.clone()+c.clone();
                 let upper = b.clone()+d.clone();
                 Interval::new(lower, upper)
@@ -118,7 +129,7 @@ impl Sub for Interval{
         match (self,rhs){
             (Interval::Bottom,_) | (_, Interval::Bottom) => Interval::Bottom,
             (Interval::Top, _) | (_, Interval::Top) => Interval::Top,
-            (Interval::Pair(a, b), Interval::Pair(c, d)) => {
+            (Interval::Range(a, b), Interval::Range(c, d)) => {
                 let lower = a.clone()-d.clone();
                 let upper = b.clone()-c.clone();
                 Interval::new(lower, upper)
@@ -132,14 +143,14 @@ impl Mul for Interval{
         match (self,rhs){
             (Interval::Bottom,_) | (_, Interval::Bottom) => Interval::Bottom,
             (Interval::Top, Interval::Top) => Interval::Top,
-            (Interval::Top, Interval::Pair(a, b)) | (Interval::Pair(a, b), Interval::Top) =>{
+            (Interval::Top, Interval::Range(a, b)) | (Interval::Range(a, b), Interval::Top) =>{
                 if a == ExtendedNum::Num(0) && b == ExtendedNum::Num(0){
-                    Interval::Pair(ExtendedNum::Num(0), ExtendedNum::Num(0))
+                    Interval::Range(ExtendedNum::Num(0), ExtendedNum::Num(0))
                 } else {
                     Interval::Top
                 }
             },
-            (Interval::Pair(a, b), Interval::Pair(c, d)) => {
+            (Interval::Range(a, b), Interval::Range(c, d)) => {
                 let points = [a*c, a*d, b*c, b*d];
                 let lower = points.iter().min().unwrap().clone();               
                 let upper = points.iter().max().unwrap().clone();         
@@ -157,21 +168,21 @@ impl Div for Interval{
         match (self, rhs) {
             (Interval::Bottom,_) | (_, Interval::Bottom) => Interval::Bottom,
             (Interval::Top, Interval::Top) => Interval::Top,
-            (Interval::Top, Interval::Pair(a, b))  =>{
+            (Interval::Top, Interval::Range(a, b))  =>{
                 if a == ExtendedNum::Num(0) && b == ExtendedNum::Num(0){
                     Interval::Bottom
                 } else {
                     Interval::Top
                 }
             },
-            (Interval::Pair(a, b), Interval::Top) =>{
+            (Interval::Range(a, b), Interval::Top) =>{
                 if a == ExtendedNum::Num(0) && b == ExtendedNum::Num(0){
-                    Interval::Pair(ExtendedNum::Num(0), ExtendedNum::Num(0))
+                    Interval::Range(ExtendedNum::Num(0), ExtendedNum::Num(0))
                 } else {
                     Interval::Top
                 }
             },
-            (n1@Interval::Pair(a, b), n2@Interval::Pair(c, d)) => {
+            (n1@Interval::Range(a, b), n2@Interval::Range(c, d)) => {
                 if ExtendedNum::Num(1)<=c {
                     Interval::new(min(a/c, a/d), max(b/c, b/d))
                 }else if d <= ExtendedNum::Num(-1) {

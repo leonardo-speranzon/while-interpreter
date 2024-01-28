@@ -3,6 +3,10 @@ pub mod domains{
     pub mod sign_domain;
     pub mod interval_domain;
     pub mod extended_num;
+    pub mod bounded_interval_domain;
+}
+pub mod analyzers {
+    pub mod interval_analyzer;
 }
 pub mod my_analyzer;
 mod abs_ast;
@@ -23,6 +27,7 @@ pub trait AbstractState<D>: Debug + Display + PartialEq + Clone {
     fn glb(self, other: &Self) -> Self;
     fn get(&self, k: &str) -> D;
     fn set(&mut self, k: String, v: D);
+    fn widening(self, other:Self) -> Self;
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -94,6 +99,23 @@ impl<D: AbstractDomain> AbstractState<D> for HashMapState<D>  {
             HashMapState(None) => (),
         }
     }
+
+    fn widening(self, other: Self) -> Self {
+        match (self.0, other.0){
+            (None, s) | (s, None) => HashMapState(s),
+            (Some(mut s1), Some(s2)) => {
+                for (key, value) in s2 {
+                    let d = match s1.get(&key) {
+                        Some(d) => d.clone().widening(value),
+                        None => value,
+                    };
+                    s1.insert(key, d);
+                };
+                HashMapState(Some(s1))
+            },
+        }
+    }
+    
 }
 
 impl<D: AbstractDomain> PartialOrd for HashMapState<D> {
@@ -118,7 +140,10 @@ pub trait AbstractDomain : Debug + Display + PartialOrd + Clone + Sized + From<N
         }
     }
     fn backward_abstract_operator(op: &Operator, lhs: &Self, rhs: &Self, res: &Self) -> (Self, Self);
-    // fn widening();
+
+    fn widening(self, other:Self) -> Self {
+        self.lub(&other) //If the domain doesn't need widening this is perfect
+    }
     // fn narrowing();
 
     fn gte(lb: &Self) -> Self;
@@ -135,8 +160,10 @@ pub trait StaticAnalyzer<D: AbstractDomain, B: AbstractState<D> = HashMapState<D
 
     fn init(ast: Statement<Num>) -> Program<D> {
         let p = Program::from(ast);
-        println!("\n{:?}\n\n", p);
-        abstract_program(p)
+        println!("\nProgram:{:?}\n\n", p);
+        let abs_prog = abstract_program(p);
+        println!("\nAbstract Program: {:?}\n\n", abs_prog);
+        abs_prog
     }
     fn analyze(p: Program<D>, init_state: B) -> HashMap<Label, B>;
     

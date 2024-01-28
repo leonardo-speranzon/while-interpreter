@@ -1,4 +1,6 @@
-use std::cmp::max;
+use std::{cmp::max, collections::HashMap};
+
+use iter_tools::Itertools;
 
 use crate::types::ast::{Statement, Aexpr, Var, Bexpr};
 
@@ -7,6 +9,7 @@ pub struct Program<D> {
     pub labels_num: Label,
     pub entry: Label, // always first index
     pub exit: Label,  // always last index
+    pub widening_points: Vec<Label>,
     pub arcs: Vec<Arc<D>>
 }
 
@@ -30,8 +33,20 @@ impl<D> Program<D>{
             labels_num: max_label + 1,
             entry: 0,
             exit: *max_label,
+            widening_points: vec![],
             arcs,
         }
+    }
+    pub fn compute_widening_point(&mut self){
+        // let points = self.arcs.iter()
+        //     .counts_by(|(_,_,l)| l);
+        // println!("points={:?}",points);
+        let points = self.arcs.iter()
+            .counts_by(|(_,_,l)| l)
+            .iter()
+            .filter_map(|(l,n)| if n>=&2 {Some(**l)} else {None})
+            .collect::<Vec<_>>();
+        self.widening_points = points;
     }
 }
 

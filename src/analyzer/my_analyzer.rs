@@ -22,50 +22,37 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for MyAnalyzer<
             }
             Aexpr::PreInc(x) => {
                 let d = s.get(x) + D::from(1);
-                s.set(x.clone(), d.clone());
+                s.set(x.to_string(), d.clone());
                 (d, s)
             }
             Aexpr::PreDec(x) => {
                 let d = s.get(x) - D::from(1);
-                s.set(x.clone(), d.clone());
+                s.set(x.to_string(), d.clone());
                 (d, s)
             },
             Aexpr::PostInc(x) => {
                 let d = s.get(x);
-                s.set(x.clone(), d.clone() + D::from(1));
+                s.set(x.to_string(), d.clone() + D::from(1));
                 (d, s)
             },
             Aexpr::PostDec(x) =>{
                 let d = s.get(x);
-                s.set(x.clone(), d.clone() - D::from(1));
+                s.set(x.to_string(), d.clone() - D::from(1));
                 (d, s)
             },
         }
     }
 
-    fn eval_bexpr(b: &Bexpr<D>, mut s: B)-> B {
+    fn eval_bexpr(b: &Bexpr<D>, s: B)-> B {
         match b{
             Bexpr::True => s,
             Bexpr::False => AbstractState::bottom(),
             Bexpr::Equal(a1, a2) => {
                 match (*a1.clone(),*a2.clone()) {
-                    (Aexpr::Num(c), Aexpr::Var(x)) | (Aexpr::Var(x), Aexpr::Num(c)) => {
-                        s.set(x.clone(), s.get(&x).glb(&c));
-                        s
-                    },
-                    (Aexpr::Var(x), Aexpr::Var(y)) => {
-                        let mut s1 = s.clone() ;
-                        if s.get(&x) != D::bottom() && s.get(&x) != D::top() {
-                            // s1 = Self::eval_bexpr(&Bexpr::Equal(Box::new(Aexpr::Var(x.clone())), Box::new(Aexpr::Num(s.get(&x)))), s1);
-                            s1.set(y.clone(), s.get(&x).glb(&s.get(&y)));
-                        };
-                        let mut s2 = s.clone() ;
-                        if s.get(&y) != D::bottom() && s.get(&y) != D::top() {
-                            s2.set(x.clone(), s.get(&x).glb(&s.get(&y)));
-                        };
-                        s1.glb(&s2)
-                    },
-
+                    (Aexpr::Num(c), Aexpr::Var(x)) | (Aexpr::Var(x), Aexpr::Num(c)) =>
+                        test_eq_case_1(s, x, c),
+                    (Aexpr::Var(x), Aexpr::Var(y)) => 
+                        test_eq_case_2(s, x, y, D::from(0)),
                     (a1,a2) => {
                         let (n1, s1) = Self::eval_aexpr(&a1, s);
                         let (n2, s2) = Self::eval_aexpr(&a2, s1);
@@ -80,18 +67,10 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for MyAnalyzer<
             },
             Bexpr::LessEq(a1, a2) => {
                 match (*a1.clone(),*a2.clone()) {
-                    (Aexpr::Num(c), Aexpr::Var(x)) | (Aexpr::Var(x), Aexpr::Num(c)) => {
-                        s.set(x.clone(), s.get(&x).glb(&D::lte(&c)));
-                        s
-                    },
-                    (Aexpr::Var(x), Aexpr::Var(y)) => {
-                        let x_val = s.get(&x);
-                        let y_val = s.get(&y);
-                        s.set(x, x_val.glb(&D::lte(&y_val)));
-                        s.set(y, y_val.glb(&D::gte(&x_val)));
-                        s
-
-                    }
+                    (Aexpr::Num(c), Aexpr::Var(x)) | (Aexpr::Var(x), Aexpr::Num(c)) => 
+                        test_lte_case_1(s, x, c),
+                    (Aexpr::Var(x), Aexpr::Var(y)) =>
+                        test_lte_case_2(s, x, y),
                     (_, _) => s
                 }                
                 
@@ -113,18 +92,10 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for MyAnalyzer<
                     },
                     Bexpr::LessEq(a1, a2) => {
                         match (*a1.clone(),*a2.clone()) {
-                            (Aexpr::Num(c), Aexpr::Var(x)) | (Aexpr::Var(x), Aexpr::Num(c)) => {
-                                s.set(x.clone(), s.get(&x).glb(&D::gte(&(c+D::from(1)))));
-                                s
-                            },
-                            (Aexpr::Var(x), Aexpr::Var(y)) => {
-                                let x_val = s.get(&x);
-                                let y_val = s.get(&y);
-                                s.set(x, x_val.glb(&D::gte(&(y_val.clone() + D::from(1)))));
-                                s.set(y, y_val.glb(&D::gte(&(x_val - D::from(1)))));
-                                s
-        
-                            }
+                            (Aexpr::Num(c), Aexpr::Var(x)) | (Aexpr::Var(x), Aexpr::Num(c)) => 
+                                test_eq_case_1(s, x, c),
+                            (Aexpr::Var(x), Aexpr::Var(y)) => 
+                                test_gt_case_2(s, x, y),
                             (_, _) => s
                         } 
                     },
@@ -143,51 +114,9 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for MyAnalyzer<
         }
     }
 
-    // fn refine_aexpr(a: &Aexpr<D>, s: B, dom: &D) -> B {
-    //     match a {
-    //         Aexpr::Num(n) => {
-    //             if n.glb(dom) == D::bottom() {
-    //                 AbstractState::bottom()
-    //             } else {
-    //                 s
-    //             }
-    //         },
-    //         Aexpr::Var(x) => {
-    //             match s {
-    //                 AbstractState(Some(mut s)) => {
-    //                     let glb = s.get(x)
-    //                         .unwrap_or(&AbstractDomain::top())
-    //                         .glb(dom);
-    //                     if glb == D::bottom() {
-    //                         AbstractState(None)
-    //                     } else {
-    //                         s.insert(x.clone(), glb);
-    //                         AbstractState(Some(s))
-    //                     }
-    //                 }
-    //                 AbstractState(None) => s
-    //             }
-    //         },
-    //         Aexpr::BinOp(op, a1, a2)=>{
-    //             let n1 = Self::eval_aexpr(a1, &s);
-    //             let n2 = Self::eval_aexpr(a2, &s);
-    //
-    //             let (d1,d2) = D::backward_abstract_operator(
-    //                 op,
-    //                 &n1,
-    //                 &n2,
-    //                 dom
-    //             );
-    //
-    //             let s = Self::refine_aexpr(a1, s,&d1);
-    //             let s = Self::refine_aexpr(a2, s,&d2);                
-    //             s
-    //         }
-    //     }
-    // }
-
     fn analyze(prog: Program<D>, init_state: B) -> HashMap<Label, B> {
         let mut all_state: HashMap<Label, B> = HashMap::new();
+
 
         for i in 0..=(prog.labels_num-1) {
             all_state.insert(i, AbstractState::bottom());
@@ -195,55 +124,129 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for MyAnalyzer<
         all_state.insert(prog.entry, init_state);
 
 
-        let iteration_num = 50;
+        let mut iteration_num= 1;
 
         println!("\nINITIAL STATES:\n{}\n", map_to_str(&all_state));
-        for i in 0..iteration_num {
-            all_state = make_iteration(&prog, all_state);
-            println!("\nITERATION {}:\n{:?}\n",i+1, map_to_str(&all_state));
+        let mut new_all_state = Self::make_iteration(&prog, all_state.clone());
+        while new_all_state != all_state {
+            all_state = new_all_state;
+            println!("ITERATION {}:\n{:?}\n",iteration_num, map_to_str(&all_state)); iteration_num+=1;
+            new_all_state = Self::make_iteration(&prog, all_state.clone()); 
         }
+        println!("\nFINAL STATES:\n{}\n", map_to_str(&all_state));
+
 
         all_state
     }
 }
 
+impl<D: AbstractDomain, B: AbstractState<D>> MyAnalyzer<D,B>{
+    fn make_iteration(prog: &Program<D>, states: HashMap<Label, B>) -> HashMap<Label, B>{
+        let mut all_states: HashMap<Label, B> = HashMap::new();
+        for i in 0..=(prog.labels_num-1) {
+            if i == prog.entry { all_states.insert(i, states.get(&i).unwrap().clone()); continue; }
+            let arcs = Self::get_entering_arcs(prog, i);
+            let mut new_state = B::bottom();
+            // println!("label {i} entering arcs:{:?}", &arcs);
+            for (l,cmd,_) in arcs {
+                match  states.get(l) {
+                    Some(s) => new_state = new_state.lub(Self::apply_cmd(cmd, s)),
+                    None => panic!("Missing AbsState for label {l}"),
+                };
+            }
+            if prog.widening_points.contains(&i) {
+                new_state = states
+                    .get(&i)
+                    .expect(&format!("Missing AbsState for label {i}"))
+                    .clone()
+                    .widening(new_state)
+            }
 
-fn make_iteration<D: AbstractDomain, B: AbstractState<D>>(prog: &Program<D>, states: HashMap<Label, B>) -> HashMap<Label, B>{
-    let mut all_states: HashMap<Label, B> = HashMap::new();
-    for i in 0..=(prog.labels_num-1) {
-        if i == prog.entry { all_states.insert(i, states.get(&i).unwrap().clone()); continue; }
-        let arcs = get_entering_arcs(prog, i);
-        let mut new_state = B::bottom();
-        // println!("label {i} entering arcs:{:?}", &arcs);
-        for (l,cmd,_) in arcs {
-            match  states.get(l) {
-                Some(s) => new_state = new_state.lub(apply_cmd(cmd, s)),
-                None => panic!("Missing AbsState for label {l}"),
-            };
+            all_states.insert(i, new_state);
+        };
+        all_states
+    }
+
+    fn apply_cmd(cmd: &Command<D>, old_state: &B) -> B{
+        let mut state = old_state.clone();
+        match cmd {
+            Command::Assignment(x, a) => {
+                let (aexpr_dom, mut s2) = Self::eval_aexpr(a, state);
+                // println!("aexpr_dom: {:?}", aexpr_dom);
+                s2.set(x.to_string(), aexpr_dom);
+                state = s2
+            },
+            Command::Test(b) => {
+                state = Self::eval_bexpr(b, state);
+                // println!("Apply test: {b} -> {old_state} -> {state}");
+            },
         }
-        // println!("label {i} computed state{:?}", &new_state);
-        all_states.insert(i, new_state);
-    };
-    all_states
+        state
+    }
+
+    fn get_entering_arcs(prog: &Program<D>, label: Label) -> Vec<&Arc<D>>{
+        prog.arcs.iter().filter(|(_,_,l)|l==&label).collect()
+    }
 }
 
-fn apply_cmd<D: AbstractDomain, B: AbstractState<D>>(cmd: &Command<D>, old_state: &B) -> B{
-    let mut state = old_state.clone();
-    match cmd {
-        Command::Assignment(x, a) => {
-            let (aexpr_dom, mut s2) = MyAnalyzer::eval_aexpr(a, state); //FIXME Self::
-            // println!("aexpr_dom: {:?}", aexpr_dom);
-            s2.set(x.to_string(), aexpr_dom);
-            state = s2
-        },
-        Command::Test(b) => {
-            state = MyAnalyzer::eval_bexpr(b, state); //FIXME Self::
-            // println!("Apply test: {b} -> {old_state} -> {state}");
-        },
-    }
+
+/**
+ * X - c = 0
+ */
+fn test_eq_case_1<D: AbstractDomain, B: AbstractState<D>>(mut state: B, x: String, c: D)-> B{
+    state.set(x.clone(), state.get(&x).glb(&c));
     state
 }
 
-fn get_entering_arcs<D>(prog: &Program<D>, label: Label) -> Vec<&Arc<D>>{
-    prog.arcs.iter().filter(|(_,_,l)|l==&label).collect()
+/**
+ * X - Y - c = 0
+ */
+fn test_eq_case_2<D: AbstractDomain, B: AbstractState<D>>(state: B, x: String, y: String, c: D)-> B{
+    let s1 =match state.get(&x) {
+        d if d==D::bottom() || d==D::top()  => state.clone(),
+        _ => test_eq_case_1(state.clone(), x.clone(), state.get(&y) + c.clone())
+    };
+    let s2 =match state.get(&y) {
+        d if d==D::bottom() || d==D::top()  => state,
+        _ => test_eq_case_1(state.clone(), y, state.get(&x) - c)
+    };
+    s1.glb(&s2)
+}
+
+
+/**
+ * X - c <= 0
+ */
+fn test_lte_case_1<D: AbstractDomain, B: AbstractState<D>>(mut state: B, x: String, c: D)-> B{
+    state.set(x.clone(), state.get(&x).glb(&D::lte(&c)));
+    state
+}
+
+/**
+ * X - Y <= 0
+ */
+fn test_lte_case_2<D: AbstractDomain, B: AbstractState<D>>(mut state: B, x: String, y: String)-> B{
+    let x_val = state.get(&x);
+    let y_val = state.get(&y);
+    state.set(x, x_val.glb(&D::lte(&y_val)));
+    state.set(y, y_val.glb(&D::gte(&x_val)));
+    state
+}
+
+/**
+ * X - c > 0
+ */
+fn test_gt_case_1<D: AbstractDomain, B: AbstractState<D>>(mut state: B, x: String, c: D)-> B{
+    state.set(x.clone(), state.get(&x).glb(&D::gte(&(c+D::from(1)))));
+    state
+}
+/**
+ * X - Y > 0 // => Y - X < 0 => Y - X <= 1
+ */
+fn test_gt_case_2<D: AbstractDomain, B: AbstractState<D>>(mut state: B, x: String, y: String)-> B{
+    let x_val = state.get(&x);
+    let y_val = state.get(&y);
+    state.set(x, x_val.glb(&D::gte(&(y_val.clone() + D::from(1)))));
+    state.set(y, y_val.glb(&D::gte(&(x_val - D::from(1)))));
+    state
 }

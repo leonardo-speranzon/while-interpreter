@@ -3,7 +3,7 @@ use clap::{Command, ArgAction, Arg};
 use interpreter::{types::State, interpreter::eval_statement};
 use parser::{ parse_string, parse_file};
 use types::{ast::{Num, Statement}, errors::{ParserError, RuntimeError}};
-use analyzer::{my_analyzer::MyAnalyzer, StaticAnalyzer, domains::{sign_domain::Sign, interval_domain::Interval}, program::Program, AbstractState, HashMapState};
+use analyzer::{my_analyzer::MyAnalyzer, StaticAnalyzer, domains::{bounded_interval_domain::BoundedInterval, interval_domain::Interval, sign_domain::Sign}, program::Program, AbstractState, HashMapState};
 
 mod types;
 mod interpreter;
@@ -57,7 +57,7 @@ fn main() {
             return;
         },
     };
-    let prog: Program<Interval> = MyAnalyzer::<Interval, HashMapState<Interval>>::init(ast.clone());
+    let prog: Program<BoundedInterval> = MyAnalyzer::<_, HashMapState<_>>::init(ast.clone());
     MyAnalyzer::analyze(prog, HashMapState::top());
 
     

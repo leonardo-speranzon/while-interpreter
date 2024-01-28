@@ -78,7 +78,7 @@ impl AbstractDomain for Sign{
             _ => Sign::Top,
         }
     }
-    
+
 }
 
 impl Add for Sign{
