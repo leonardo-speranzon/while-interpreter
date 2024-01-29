@@ -4,6 +4,7 @@ pub mod domains{
     pub mod interval_domain;
     pub mod extended_num;
     pub mod bounded_interval_domain;
+    pub mod extended_sign_domain;
 }
 pub mod analyzers {
     pub mod interval_analyzer;
@@ -151,6 +152,11 @@ pub trait AbstractDomain : Debug + Display + PartialOrd + Clone + Sized + From<N
         match op {
             Operator::Add => lhs.clone() + rhs.clone(),
             Operator::Sub => lhs.clone() - rhs.clone(),
+            //  {
+            //     let res = lhs.clone() - rhs.clone();
+            //     println!("({lhs}) - ({rhs}) -> ({res})");
+            //     res
+            // },
             Operator::Mul => lhs.clone() * rhs.clone(),
             //  {
             //     let res = lhs.clone() * rhs.clone();
