@@ -84,7 +84,7 @@ impl AbstractDomain for BoundedInterval{
         todo!()
     }
 
-    fn gte(lb: &Self) -> Self {
+    fn all_gte(lb: &Self) -> Self {
         match lb {
             BoundedInterval::Range(a, _) => BoundedInterval::new(*a, ExtendedNum::PosInf),
             BoundedInterval::Top => BoundedInterval::Top,
@@ -93,7 +93,7 @@ impl AbstractDomain for BoundedInterval{
         
     }
 
-    fn lte(ub: &Self) -> Self {
+    fn all_lte(ub: &Self) -> Self {
         match ub {
             BoundedInterval::Range(_, b) => BoundedInterval::new(ExtendedNum::NegInf, *b),
             BoundedInterval::Top => BoundedInterval::Top,

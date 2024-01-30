@@ -76,7 +76,7 @@ impl AbstractDomain for Interval{
         todo!()
     }
 
-    fn gte(lb: &Self) -> Self {
+    fn all_gte(lb: &Self) -> Self {
         match lb {
             Interval::Range(a, b) => Interval::new(*a, ExtendedNum::PosInf),
             Interval::Top => Interval::Top,
@@ -85,7 +85,7 @@ impl AbstractDomain for Interval{
         
     }
 
-    fn lte(ub: &Self) -> Self {
+    fn all_lte(ub: &Self) -> Self {
         match ub {
             Interval::Range(a, b) => Interval::new(ExtendedNum::NegInf, *b),
             Interval::Top => Interval::Top,

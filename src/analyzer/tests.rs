@@ -30,7 +30,7 @@ pub fn test_eq_case_2<D: AbstractDomain, B: AbstractState<D>>(state: B, x: Strin
  * X - c <= 0
  */
 pub fn test_lte_case_1<D: AbstractDomain, B: AbstractState<D>>(mut state: B, x: String, c: D)-> B{
-    state.set(x.clone(), state.get(&x).glb(&D::lte(&c)));
+    state.set(x.clone(), state.get(&x).glb(&D::all_lte(&c)));
     state
 }
 
@@ -40,8 +40,8 @@ pub fn test_lte_case_1<D: AbstractDomain, B: AbstractState<D>>(mut state: B, x: 
 pub fn test_lte_case_2<D: AbstractDomain, B: AbstractState<D>>(mut state: B, x: String, y: String)-> B{
     let x_val = state.get(&x);
     let y_val = state.get(&y);
-    state.set(x, x_val.glb(&D::lte(&y_val)));
-    state.set(y, y_val.glb(&D::gte(&x_val)));
+    state.set(x, x_val.glb(&D::all_lte(&y_val)));
+    state.set(y, y_val.glb(&D::all_gte(&x_val)));
     state
 }
 
@@ -49,16 +49,27 @@ pub fn test_lte_case_2<D: AbstractDomain, B: AbstractState<D>>(mut state: B, x: 
  * X - c > 0
  */
 pub fn test_gt_case_1<D: AbstractDomain, B: AbstractState<D>>(mut state: B, x: String, c: D)-> B{
-    state.set(x.clone(), state.get(&x).glb(&D::gte(&(c+D::from(1)))));
+    state.set(x.clone(), state.get(&x).glb(&D::all_gt(&c)));
     state
 }
 /**
- * X - Y > 0 // => Y - X < 0 => Y - X <= 1
+ * X - Y > 0 // -> Y - X < 0 -> Y - X <= 1
  */
 pub fn test_gt_case_2<D: AbstractDomain, B: AbstractState<D>>(mut state: B, x: String, y: String)-> B{
     let x_val = state.get(&x);
     let y_val = state.get(&y);
-    state.set(x, x_val.glb(&D::gte(&(y_val.clone() + D::from(1)))));
-    state.set(y, y_val.glb(&D::gte(&(x_val - D::from(1)))));
+    state.set(x, x_val.glb(&D::all_lt(&y_val)));
+    state.set(y, y_val.glb(&D::all_gt(&x_val)));
+    state
+}
+
+/**
+ * X - c != 0
+ */
+pub fn test_neq_case_1<D: AbstractDomain, B: AbstractState<D>>(mut state: B, x: String, c: D) -> B {
+    let x_val = state.get(&x);
+    let left = x_val.glb(&D::all_lt(&c));
+    let right = x_val.glb(&D::all_gt(&c));
+    state.set(x.clone(), left.lub(&right));
     state
 }

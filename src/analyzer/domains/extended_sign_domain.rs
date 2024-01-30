@@ -69,17 +69,17 @@ impl AbstractDomain for ExtendedSign{
         todo!()
     }
 
-    fn gte(lb: &Self) -> Self {
+    fn all_gte(lb: &Self) -> Self {
         if lb.negative {ExtendedSign{positive:true, zero: true, negative: true }}
         else if lb.zero {ExtendedSign{positive:true, zero: true, negative: false }}
         else if lb.positive {ExtendedSign{positive:true, zero: false, negative: false }}
         else {ExtendedSign{positive:false, zero: false, negative: false }}
     }
 
-    fn lte(ub: &Self) -> Self {
+    fn all_lte(ub: &Self) -> Self {
         if ub.positive {ExtendedSign{positive:true, zero: true, negative: true }}
         else if ub.zero {ExtendedSign{positive:false, zero: true, negative: true }}
-        else if ub.positive {ExtendedSign{positive:false, zero: false, negative: true }}
+        else if ub.negative {ExtendedSign{positive:false, zero: false, negative: true }}
         else {ExtendedSign{positive:false, zero: false, negative: false }}
     }
 

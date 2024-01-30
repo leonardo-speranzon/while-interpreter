@@ -74,7 +74,11 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for GenericAnal
                         tests::test_lte_case_1(s, x, c),
                     (Aexpr::Var(x), Aexpr::Var(y)) =>
                         tests::test_lte_case_2(s, x, y),
-                    (_, _) => s
+                    (_, _) => {
+                        let (_, s1) = Self::eval_aexpr(&a1, s);
+                        let (_, s2) = Self::eval_aexpr(&a2, s1);
+                        s2
+                    }
                 }                
                 
             },
@@ -86,14 +90,18 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for GenericAnal
                     Bexpr::True => AbstractState::bottom(),
                     Bexpr::False => s,
                     Bexpr::Equal(a1, a2) => {
-                        let (n1, s1) = Self::eval_aexpr(&a1, s);
-                        let (n2, s2) = Self::eval_aexpr(&a2, s1);
-                        // let dom = n1.glb(&n2);
-                        if n1 == n2 {
-                            AbstractState::bottom()
-                        }else{
-                            s2   
-                        }
+                        match (*a1.clone(),*a2.clone()) {
+                            (Aexpr::Num(c), Aexpr::Var(x)) | (Aexpr::Var(x), Aexpr::Num(c)) => 
+                                tests::test_neq_case_1(s, x, c),
+                            // (Aexpr::Var(x), Aexpr::Var(y)) => 
+                            //     tests::test_gt_case_2(s, x, y),
+                            (_, _) => {
+                                // Since n1 and n2 are over approximations we can't know 
+                                let (_, s1) = Self::eval_aexpr(&a1, s);
+                                let (_, s2) = Self::eval_aexpr(&a2, s1);
+                                s2
+                            }
+                        } 
                     },
                     Bexpr::LessEq(a1, a2) => {
                         match (*a1.clone(),*a2.clone()) {
@@ -101,7 +109,11 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for GenericAnal
                                 tests::test_gt_case_1(s, x, c),
                             (Aexpr::Var(x), Aexpr::Var(y)) => 
                                 tests::test_gt_case_2(s, x, y),
-                            (_, _) => s
+                            (_, _) => {
+                                let (_, s1) = Self::eval_aexpr(&a1, s);
+                                let (_, s2) = Self::eval_aexpr(&a2, s1);
+                                s2
+                            }
                         } 
                     },
                     Bexpr::Not(b) => Self::eval_bexpr(&b, s),

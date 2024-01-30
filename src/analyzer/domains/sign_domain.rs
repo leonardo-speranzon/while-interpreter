@@ -63,7 +63,7 @@ impl AbstractDomain for Sign{
         todo!()
     }
 
-    fn gte(lb: &Self) -> Self {
+    fn all_gte(lb: &Self) -> Self {
         match lb{
             Sign::Bottom => Sign::Bottom,
             Sign::Positive => Sign::Positive,
@@ -71,7 +71,7 @@ impl AbstractDomain for Sign{
         }
     }
 
-    fn lte(ub: &Self) -> Self {
+    fn all_lte(ub: &Self) -> Self {
         match ub{
             Sign::Bottom => Sign::Bottom,
             Sign::Negative => Sign::Negative,

@@ -57,7 +57,7 @@ fn main() {
             return;
         },
     };
-    let prog: Program<BoundedInterval> = GenericAnalyzer::<_, HashMapState<_>>::init(ast.clone());
+    let prog: Program<ExtendedSign> = GenericAnalyzer::<_, HashMapState<_>>::init(ast.clone());
     GenericAnalyzer::analyze(prog, HashMapState::top());
 
     

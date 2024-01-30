@@ -36,7 +36,10 @@ pub trait AbstractDomain : Debug + Display + PartialOrd + Clone + Sized + From<N
         self //Trivial narrowing
     }
 
-    fn gte(lb: &Self) -> Self;
-    fn lte(ub: &Self) -> Self;
+    fn all_gte(lb: &Self) -> Self;
+    fn all_lte(ub: &Self) -> Self;
+
+    fn all_gt(lb: &Self) -> Self {Self::all_gte(&(lb.clone() + Self::from(1)))}
+    fn all_lt(ub: &Self) -> Self {Self::all_lte(&(ub.clone() - Self::from(1)))}
 }
 
