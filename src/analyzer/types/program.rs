@@ -1,5 +1,4 @@
-use std::{cmp::max, collections::HashMap};
-
+use std::cmp::max;
 use iter_tools::Itertools;
 
 use crate::types::ast::{Statement, Aexpr, Var, Bexpr};
@@ -38,9 +37,6 @@ impl<D> Program<D>{
         }
     }
     pub fn compute_widening_point(&mut self){
-        // let points = self.arcs.iter()
-        //     .counts_by(|(_,_,l)| l);
-        // println!("points={:?}",points);
         let points = self.arcs.iter()
             .counts_by(|(_,_,l)| l)
             .iter()

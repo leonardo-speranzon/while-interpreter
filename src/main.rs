@@ -1,9 +1,9 @@
 use std::fs::File;
+use analyzer::{domains::{bounded_interval_domain::BoundedInterval, extended_sign_domain::ExtendedSign}, analyzers::generic_analyzer::GenericAnalyzer, states::hashmap_state::HashMapState, types::{analyzer::StaticAnalyzer, program::Program, state::AbstractState}};
 use clap::{Command, ArgAction, Arg};
 use interpreter::{types::State, interpreter::eval_statement};
 use parser::{ parse_string, parse_file};
 use types::{ast::{Num, Statement}, errors::{ParserError, RuntimeError}};
-use analyzer::{my_analyzer::MyAnalyzer, StaticAnalyzer, domains::{bounded_interval_domain::BoundedInterval, extended_sign_domain::ExtendedSign, interval_domain::Interval, sign_domain::Sign}, program::Program, AbstractState, HashMapState};
 
 mod types;
 mod interpreter;
@@ -57,8 +57,8 @@ fn main() {
             return;
         },
     };
-    let prog: Program<ExtendedSign> = MyAnalyzer::<_, HashMapState<_>>::init(ast.clone());
-    MyAnalyzer::analyze(prog, HashMapState::top());
+    let prog: Program<BoundedInterval> = GenericAnalyzer::<_, HashMapState<_>>::init(ast.clone());
+    GenericAnalyzer::analyze(prog, HashMapState::top());
 
     
     let final_state = eval_statement(

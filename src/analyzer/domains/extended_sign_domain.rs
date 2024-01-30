@@ -1,6 +1,7 @@
 use std::{fmt::Display, ops::{Add, Div, Mul, Sub}};
 
-use crate::{analyzer::AbstractDomain, types::ast::{Num, Operator}};
+use crate::types::ast::{Num, Operator};
+use crate::analyzer::types::domain::AbstractDomain;
 
 #[derive(Debug,PartialEq,Clone)]
 pub struct ExtendedSign{

@@ -1,6 +1,7 @@
-use crate::types::ast::{Aexpr, Bexpr, Num};
+use crate::{analyzer::types::program::Command, types::ast::{Aexpr, Bexpr, Num}};
 
-use super::{AbstractDomain, program::{Program, Command}};
+use super::types::{domain::AbstractDomain, program::Program};
+
 
 pub fn abstract_program<D:AbstractDomain>(prog: Program<Num>) -> Program<D>{
     let abs_arcs = prog.arcs.into_iter().map(|(l1,cmd,l2)|{

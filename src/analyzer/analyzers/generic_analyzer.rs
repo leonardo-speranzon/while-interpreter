@@ -1,14 +1,17 @@
+use crate::analyzer::types::program::{Arc, Command, Label};
+use crate::analyzer::types::{program::Program, state::AbstractState};
+use crate::analyzer::types::domain::AbstractDomain;
+use crate::analyzer::types::analyzer::StaticAnalyzer;
 use std::{collections::HashMap, marker::PhantomData};
 
 use crate::{types::ast::{Aexpr, Bexpr}, analyzer::printers::map_to_str};
-
-use super::{AbstractDomain, AbstractState, StaticAnalyzer, program::{Label, Command, Program, Arc}};
-pub struct MyAnalyzer<D, B> {    
+use crate::analyzer::tests as tests;
+pub struct GenericAnalyzer<D, B> {    
    domain: PhantomData<D>,
    abs_state: PhantomData<B>,
 }
 
-impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for MyAnalyzer<D,B>{
+impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for GenericAnalyzer<D,B>{
     
     fn eval_aexpr(a: &Aexpr<D>, mut s: B)-> (D, B) {
         match a {
@@ -50,9 +53,9 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for MyAnalyzer<
             Bexpr::Equal(a1, a2) => {
                 match (*a1.clone(),*a2.clone()) {
                     (Aexpr::Num(c), Aexpr::Var(x)) | (Aexpr::Var(x), Aexpr::Num(c)) =>
-                        test_eq_case_1(s, x, c),
+                        tests::test_eq_case_1(s, x, c),
                     (Aexpr::Var(x), Aexpr::Var(y)) => 
-                        test_eq_case_2(s, x, y, D::from(0)),
+                        tests::test_eq_case_2(s, x, y, D::from(0)),
                     (a1,a2) => {
                         let (n1, s1) = Self::eval_aexpr(&a1, s);
                         let (n2, s2) = Self::eval_aexpr(&a2, s1);
@@ -68,9 +71,9 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for MyAnalyzer<
             Bexpr::LessEq(a1, a2) => {
                 match (*a1.clone(),*a2.clone()) {
                     (Aexpr::Num(c), Aexpr::Var(x)) | (Aexpr::Var(x), Aexpr::Num(c)) => 
-                        test_lte_case_1(s, x, c),
+                        tests::test_lte_case_1(s, x, c),
                     (Aexpr::Var(x), Aexpr::Var(y)) =>
-                        test_lte_case_2(s, x, y),
+                        tests::test_lte_case_2(s, x, y),
                     (_, _) => s
                 }                
                 
@@ -95,9 +98,9 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for MyAnalyzer<
                     Bexpr::LessEq(a1, a2) => {
                         match (*a1.clone(),*a2.clone()) {
                             (Aexpr::Num(c), Aexpr::Var(x)) | (Aexpr::Var(x), Aexpr::Num(c)) => 
-                                test_gt_case_1(s, x, c),
+                                tests::test_gt_case_1(s, x, c),
                             (Aexpr::Var(x), Aexpr::Var(y)) => 
-                                test_gt_case_2(s, x, y),
+                                tests::test_gt_case_2(s, x, y),
                             (_, _) => s
                         } 
                     },
@@ -149,7 +152,7 @@ enum StepType {
     NarrowingStep
 }
 
-impl<D: AbstractDomain, B: AbstractState<D>> MyAnalyzer<D,B>{
+impl<D: AbstractDomain, B: AbstractState<D>> GenericAnalyzer<D,B>{
     fn make_iteration(prog: &Program<D>, states: HashMap<Label, B>, step_type: StepType) -> HashMap<Label, B>{
         let mut all_states: HashMap<Label, B> = HashMap::new();
         for i in 0..=(prog.labels_num-1) {
@@ -206,64 +209,3 @@ impl<D: AbstractDomain, B: AbstractState<D>> MyAnalyzer<D,B>{
     }
 }
 
-
-/**
- * X - c = 0
- */
-fn test_eq_case_1<D: AbstractDomain, B: AbstractState<D>>(mut state: B, x: String, c: D)-> B{
-    state.set(x.clone(), state.get(&x).glb(&c));
-    state
-}
-
-/**
- * X - Y - c = 0
- */
-fn test_eq_case_2<D: AbstractDomain, B: AbstractState<D>>(state: B, x: String, y: String, c: D)-> B{
-    let s1 =match state.get(&x) {
-        d if d==D::bottom() || d==D::top()  => state.clone(),
-        _ => test_eq_case_1(state.clone(), x.clone(), state.get(&y) + c.clone())
-    };
-    let s2 =match state.get(&y) {
-        d if d==D::bottom() || d==D::top()  => state,
-        _ => test_eq_case_1(state.clone(), y, state.get(&x) - c)
-    };
-    s1.glb(&s2)
-}
-
-
-/**
- * X - c <= 0
- */
-fn test_lte_case_1<D: AbstractDomain, B: AbstractState<D>>(mut state: B, x: String, c: D)-> B{
-    state.set(x.clone(), state.get(&x).glb(&D::lte(&c)));
-    state
-}
-
-/**
- * X - Y <= 0
- */
-fn test_lte_case_2<D: AbstractDomain, B: AbstractState<D>>(mut state: B, x: String, y: String)-> B{
-    let x_val = state.get(&x);
-    let y_val = state.get(&y);
-    state.set(x, x_val.glb(&D::lte(&y_val)));
-    state.set(y, y_val.glb(&D::gte(&x_val)));
-    state
-}
-
-/**
- * X - c > 0
- */
-fn test_gt_case_1<D: AbstractDomain, B: AbstractState<D>>(mut state: B, x: String, c: D)-> B{
-    state.set(x.clone(), state.get(&x).glb(&D::gte(&(c+D::from(1)))));
-    state
-}
-/**
- * X - Y > 0 // => Y - X < 0 => Y - X <= 1
- */
-fn test_gt_case_2<D: AbstractDomain, B: AbstractState<D>>(mut state: B, x: String, y: String)-> B{
-    let x_val = state.get(&x);
-    let y_val = state.get(&y);
-    state.set(x, x_val.glb(&D::gte(&(y_val.clone() + D::from(1)))));
-    state.set(y, y_val.glb(&D::gte(&(x_val - D::from(1)))));
-    state
-}

@@ -1,6 +1,6 @@
 use std::{fmt::Display, ops::{Add, Div, Mul, Sub}};
-use crate::{types::ast::{Operator, Num}, analyzer::AbstractDomain};
-
+use crate::types::ast::{Operator, Num};
+use crate::analyzer::types::domain::AbstractDomain;
 
 
 #[derive(Debug,PartialEq,Clone)]

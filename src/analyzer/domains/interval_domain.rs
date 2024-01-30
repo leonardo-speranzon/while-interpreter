@@ -1,6 +1,6 @@
 use std::{fmt::Display, cmp::{min, max}, ops::{Add, Div, Mul, Sub}};
-use crate::{types::ast::{Num, Operator}, analyzer::AbstractDomain};
-
+use crate::types::ast::{Num, Operator};
+use crate::analyzer::types::domain::AbstractDomain;
 use super::extended_num::ExtendedNum;
 
 

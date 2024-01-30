@@ -1,5 +1,5 @@
 use std::{cmp::{max, min,}, fmt::Display, ops::{Add, Sub,Mul,Div}};
-use crate::{analyzer::AbstractDomain, types::ast::{Num, Operator}};
+use crate::{analyzer::types::domain::AbstractDomain, types::ast::{Num, Operator}};
 
 use super::extended_num::ExtendedNum;
 
