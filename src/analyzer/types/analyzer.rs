@@ -18,4 +18,4 @@ pub trait StaticAnalyzer<D: AbstractDomain, B: AbstractState<D>> {
     }
     fn analyze(p: Program<D>, init_state: B) -> HashMap<Label, B>;
     
-}
+} 

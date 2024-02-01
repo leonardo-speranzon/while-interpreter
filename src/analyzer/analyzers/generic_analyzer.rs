@@ -151,7 +151,7 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for GenericAnal
         }
 
 
-        println!("\nFINAL STATES:\n{}\n", map_to_str(&all_state));
+        // println!("\nFINAL STATES:\n{}\n", map_to_str(&all_state));
 
 
         all_state
@@ -169,7 +169,7 @@ impl<D: AbstractDomain, B: AbstractState<D>> GenericAnalyzer<D,B>{
         let mut all_states: HashMap<Label, B> = HashMap::new();
         for i in 0..=(prog.labels_num-1) {
             if i == prog.entry { all_states.insert(i, states.get(&i).unwrap().clone()); continue; }
-            let arcs = Self::get_entering_arcs(prog, i);
+            let arcs = prog.get_entering_arcs(i);
             let mut new_state = B::bottom();
             // println!("label {i} entering arcs:{:?}", &arcs);
             for (l,cmd,_) in arcs {
@@ -216,8 +216,5 @@ impl<D: AbstractDomain, B: AbstractState<D>> GenericAnalyzer<D,B>{
         state
     }
 
-    fn get_entering_arcs(prog: &Program<D>, label: Label) -> Vec<&Arc<D>>{
-        prog.arcs.iter().filter(|(_,_,l)|l==&label).collect()
-    }
 }
 

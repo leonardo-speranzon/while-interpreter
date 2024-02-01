@@ -1,10 +1,9 @@
 use std::cmp::max;
 use iter_tools::Itertools;
-
 use crate::types::ast::{Statement, Aexpr, Var, Bexpr};
 
-#[derive(Debug)]
-pub struct Program<D> {
+#[derive(Debug, Clone)]
+pub struct Program<D: Clone> {
     pub labels_num: Label,
     pub entry: Label, // always first index
     pub exit: Label,  // always last index
@@ -15,13 +14,13 @@ pub struct Program<D> {
 pub type Label = u32;
 pub type Arc<D> = (Label, Command<D>, Label);
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Command<D> {
     Assignment(Var, Aexpr<D>),
     Test(Bexpr<D>),
 }
 
-impl<D> Program<D>{
+impl<D: Clone> Program<D>{
     pub fn new(arcs: Vec<(Label, Command<D>, Label)>) -> Self {
         let max_label = (&arcs)
             .into_iter()
@@ -44,6 +43,10 @@ impl<D> Program<D>{
             .collect::<Vec<_>>();
         self.widening_points = points;
     }
+
+    pub fn get_entering_arcs(self: &Self, label: Label) -> Vec<&Arc<D>>{
+        self.arcs.iter().filter(|(_,_,l)|l==&label).collect()
+    }
 }
 
 impl<D: Clone> From<Statement<D>> for Program<D>{
@@ -51,6 +54,7 @@ impl<D: Clone> From<Statement<D>> for Program<D>{
         stm_to_program(value)
     }
 }
+
 
 fn stm_to_program<D: Clone>(stm: Statement<D>) -> Program<D>{
     match stm {
@@ -124,5 +128,21 @@ fn stm_to_program<D: Clone>(stm: Statement<D>) -> Program<D>{
             arcs.append(&mut p1_arcs);
             Program::new(arcs)
         },
+    }
+}
+
+
+
+pub trait ProgramInterface{
+    fn get_end_label(&self)-> Label;
+    fn get_loop_label(&self) -> &Vec<Label>;
+}
+impl<D: Clone> ProgramInterface for Program<D>  {
+    fn get_end_label(&self)-> Label {
+        self.exit
+    }
+
+    fn get_loop_label(&self) -> &Vec<Label> {
+        &self.widening_points
     }
 }

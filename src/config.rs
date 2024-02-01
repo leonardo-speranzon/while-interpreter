@@ -21,28 +21,29 @@ pub struct InterpreterConfiguration {
 }
 
 #[derive(Debug, Clone)]
-pub enum AbstractDomain{
+pub enum Domain{
     Sign,
     ExtendedSign,
     BoundedInterval
 }
-impl ValueEnum for AbstractDomain {
+impl ValueEnum for Domain {
     fn value_variants<'a>() -> &'a [Self] {
         &[Self::Sign, Self::ExtendedSign, Self::BoundedInterval]
     }
 
     fn to_possible_value(&self) -> Option<PossibleValue> {
         match self {
-            AbstractDomain::Sign => Some(PossibleValue::new("sign")),
-            AbstractDomain::ExtendedSign => Some(PossibleValue::new("extended-sign").alias("sign+")),
-            AbstractDomain::BoundedInterval => Some(PossibleValue::new("bounded-interval")),
+            Domain::Sign => Some(PossibleValue::new("sign")),
+            Domain::ExtendedSign => Some(PossibleValue::new("extended-sign").alias("sign+")),
+            Domain::BoundedInterval => Some(PossibleValue::new("bounded-interval")),
         }
     }
 }
 
 #[derive(Debug)]
 pub struct AnalyzerConfiguration{
-    pub domain: AbstractDomain
+    pub domain: Domain,
+    // pub init_state: Option<Box<HashMapState<>>>,
 }
 
 #[derive(Debug)]
@@ -74,7 +75,7 @@ impl Config {
             .args(parser_args.clone());
 
         let analyzer_cmd = Command::new("analyze")
-            .arg(Arg::new("domain").long("domain").short('d').value_parser(clap::builder::EnumValueParser::<AbstractDomain>::new()))
+            .arg(Arg::new("domain").long("domain").short('d').value_parser(clap::builder::EnumValueParser::<Domain>::new()))
             .args(parser_args);
             // .arg(Arg::new("lower").long("lower-bound").short('l').help("Lower bound").value_parser(clap::value_parser!(Num)).action(ArgAction::Set).required(true))
 
@@ -98,7 +99,7 @@ impl Config {
             Some(("analyze", sub_m)) => Config::AnalyzerConfiguration{ 
                 parser_configuration: ParserConfig::from(sub_m),
                 config: AnalyzerConfiguration{
-                    domain: sub_m.get_one::<AbstractDomain>("domain").cloned().unwrap_or(AbstractDomain::BoundedInterval)
+                    domain: sub_m.get_one::<Domain>("domain").cloned().unwrap_or(Domain::BoundedInterval)
                 }
             },
             _ => todo!(),
