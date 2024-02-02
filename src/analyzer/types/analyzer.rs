@@ -16,6 +16,12 @@ pub trait StaticAnalyzer<D: AbstractDomain, B: AbstractState<D>> {
         println!("\nAbstract Program: {:?}\n\n", abs_prog);
         abs_prog
     }
-    fn analyze(p: Program<D>, init_state: B) -> HashMap<Label, B>;
+    fn analyze(p: Program<D>, init_state: B, iteration_strategy: IterationStrategy) -> HashMap<Label, B>;
     
 } 
+#[derive(Debug)]
+pub enum IterationStrategy{
+    Simple,
+    Widening,
+    WideningAndNarrowing,
+}

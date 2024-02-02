@@ -81,17 +81,17 @@ fn main() {
                 config::Domain::Sign => {
                     let prog: Program<Sign> = GenericAnalyzer::<_, HashMapState<_>>::init(ast.clone());
                     prog_int= Box::new(prog.clone()) as Box<dyn ProgramInterface>;
-                    result = to_boxed_state(GenericAnalyzer::analyze(prog, HashMapState::top()));
+                    result = to_boxed_state(GenericAnalyzer::analyze(prog, HashMapState::top(), config.iteration_strategy));
                 }
                 config::Domain::ExtendedSign => {
                     let prog: Program<ExtendedSign> = GenericAnalyzer::<_, HashMapState<_>>::init(ast.clone());
                     prog_int= Box::new(prog.clone()) as Box<dyn ProgramInterface>;
-                    result = to_boxed_state(GenericAnalyzer::analyze(prog, HashMapState::top()));
+                    result = to_boxed_state(GenericAnalyzer::analyze(prog, HashMapState::top(), config.iteration_strategy));
                 }
                 config::Domain::BoundedInterval => {
                     let prog: Program<BoundedInterval> = GenericAnalyzer::<_, HashMapState<_>>::init(ast.clone());
                     prog_int= Box::new(prog.clone()) as Box<dyn ProgramInterface>;
-                    result = to_boxed_state(GenericAnalyzer::analyze(prog, HashMapState::top()));
+                    result = to_boxed_state(GenericAnalyzer::analyze(prog, HashMapState::top(), config.iteration_strategy));
                 }
             };
             println!("╔═════════════════╗");

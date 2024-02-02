@@ -1,4 +1,4 @@
-use crate::{analyzer::{domains::interval_domain::Interval, states::hashmap_state::HashMapState, types::{analyzer::StaticAnalyzer, program::{Label, Program}}}, types::ast::{Aexpr, Bexpr}};
+use crate::{analyzer::{domains::interval_domain::Interval, states::hashmap_state::HashMapState, types::{analyzer::{IterationStrategy, StaticAnalyzer}, program::{Label, Program}}}, types::ast::{Aexpr, Bexpr}};
 
 
 
@@ -13,7 +13,7 @@ impl StaticAnalyzer<Interval, HashMapState<Interval>> for IntervalAnalyzer{
         todo!()
     }
 
-    fn analyze(p: Program<Interval>, init_state: HashMapState<Interval>) -> std::collections::HashMap<Label, HashMapState<Interval>> {
+    fn analyze(p: Program<Interval>, init_state: HashMapState<Interval>, iteration_strategy: IterationStrategy) -> std::collections::HashMap<Label, HashMapState<Interval>> {
         todo!()
     }
 }

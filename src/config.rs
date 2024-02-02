@@ -1,8 +1,8 @@
-use std::str::FromStr;
+use std::{collections::binary_heap::Iter, str::FromStr};
 
 use clap::{builder::PossibleValue, Arg, ArgAction, ArgMatches, Command, ValueEnum};
 
-use crate::{interpreter::types::State, types::ast::Num};
+use crate::{analyzer::types::analyzer::IterationStrategy, interpreter::types::State, types::ast::Num};
 
 
 #[derive(Debug)]
@@ -43,6 +43,7 @@ impl ValueEnum for Domain {
 #[derive(Debug)]
 pub struct AnalyzerConfiguration{
     pub domain: Domain,
+    pub iteration_strategy: IterationStrategy,
     // pub init_state: Option<Box<HashMapState<>>>,
 }
 
@@ -76,6 +77,8 @@ impl Config {
 
         let analyzer_cmd = Command::new("analyze")
             .arg(Arg::new("domain").long("domain").short('d').value_parser(clap::builder::EnumValueParser::<Domain>::new()))
+            .arg(Arg::new("widening") .short('W').help("Use widening") .action(ArgAction::SetTrue))
+            .arg(Arg::new("narrowing").short('N').help("Use narrowing").action(ArgAction::SetTrue).requires("widening"))
             .args(parser_args);
             // .arg(Arg::new("lower").long("lower-bound").short('l').help("Lower bound").value_parser(clap::value_parser!(Num)).action(ArgAction::Set).required(true))
 
@@ -99,7 +102,12 @@ impl Config {
             Some(("analyze", sub_m)) => Config::AnalyzerConfiguration{ 
                 parser_configuration: ParserConfig::from(sub_m),
                 config: AnalyzerConfiguration{
-                    domain: sub_m.get_one::<Domain>("domain").cloned().unwrap_or(Domain::BoundedInterval)
+                    domain: sub_m.get_one::<Domain>("domain").cloned().unwrap_or(Domain::BoundedInterval),
+                    iteration_strategy: match (sub_m.get_flag("widening"), sub_m.get_flag("narrowing")) {
+                        (false, _) => IterationStrategy::Simple,
+                        (true, false) => IterationStrategy::Widening,
+                        (true, true) => IterationStrategy::WideningAndNarrowing,
+                    }
                 }
             },
             _ => todo!(),

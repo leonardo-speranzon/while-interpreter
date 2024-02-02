@@ -1,7 +1,7 @@
 use crate::analyzer::types::program::{Arc, Command, Label};
 use crate::analyzer::types::{program::Program, state::AbstractState};
 use crate::analyzer::types::domain::AbstractDomain;
-use crate::analyzer::types::analyzer::StaticAnalyzer;
+use crate::analyzer::types::analyzer::{IterationStrategy, StaticAnalyzer};
 use std::{collections::HashMap, marker::PhantomData};
 
 use crate::{types::ast::{Aexpr, Bexpr}, analyzer::printers::map_to_str};
@@ -123,7 +123,7 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for GenericAnal
         }
     }
 
-    fn analyze(prog: Program<D>, init_state: B) -> HashMap<Label, B> {
+    fn analyze(prog: Program<D>, init_state: B, iteration_strategy: IterationStrategy) -> HashMap<Label, B> {
         let mut all_state: HashMap<Label, B> = HashMap::new();
 
 
@@ -134,22 +134,32 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for GenericAnal
 
 
         let mut iteration_num= 1;
-
         println!("\nINITIAL STATES:\n{}\n", map_to_str(&all_state));
-        let mut new_all_state = Self::make_iteration(&prog, all_state.clone(), StepType::WideningStep);
-        while new_all_state != all_state {
-            all_state = new_all_state;
-            println!("ITERATION (∇) {}:\n{:?}\n",iteration_num, map_to_str(&all_state)); iteration_num+=1;
-            new_all_state = Self::make_iteration(&prog, all_state.clone(), StepType::WideningStep); 
-        }
 
-        let mut new_all_state = Self::make_iteration(&prog, all_state.clone(), StepType::NarrowingStep);
-        while new_all_state != all_state {
-            all_state = new_all_state;
-            println!("ITERATION (Δ) {}:\n{:?}\n",iteration_num, map_to_str(&all_state)); iteration_num+=1;
-            new_all_state = Self::make_iteration(&prog, all_state.clone(), StepType::NarrowingStep); 
+        if let IterationStrategy::Simple = iteration_strategy {            
+            let mut new_all_state = Self::make_iteration(&prog, all_state.clone(), StepType::NormalStep);
+            while new_all_state != all_state {
+                all_state = new_all_state;
+                println!("ITERATION {}:\n{:?}\n",iteration_num, map_to_str(&all_state)); iteration_num+=1;
+                new_all_state = Self::make_iteration(&prog, all_state.clone(), StepType::NormalStep); 
+            }
+        }else {
+            let mut new_all_state = Self::make_iteration(&prog, all_state.clone(), StepType::WideningStep);
+            while new_all_state != all_state {
+                all_state = new_all_state;
+                println!("ITERATION (∇) {}:\n{:?}\n",iteration_num, map_to_str(&all_state)); iteration_num+=1;
+                new_all_state = Self::make_iteration(&prog, all_state.clone(), StepType::WideningStep); 
+            }
+    
+            if let IterationStrategy::WideningAndNarrowing = iteration_strategy {      
+                let mut new_all_state = Self::make_iteration(&prog, all_state.clone(), StepType::NarrowingStep);
+                while new_all_state != all_state {
+                    all_state = new_all_state;
+                    println!("ITERATION (Δ) {}:\n{:?}\n",iteration_num, map_to_str(&all_state)); iteration_num+=1;
+                    new_all_state = Self::make_iteration(&prog, all_state.clone(), StepType::NarrowingStep); 
+                }
+            }   
         }
-
 
         // println!("\nFINAL STATES:\n{}\n", map_to_str(&all_state));
 
