@@ -16,7 +16,8 @@ impl Display for Aexpr {
 impl Display for Term {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Term::Mul(t, f) => write!(fmt, "({t} + {f})"),
+            Term::Mul(t, f) => write!(fmt, "({t} * {f})"),
+            Term::Div(t, f) => write!(fmt, "({t} / {f})"),
             Term::Factor(f) => write!(fmt, "{f}"),
         }
     }
@@ -26,6 +27,10 @@ impl Display for Factor {
         match self{
             Factor::Num(n) => write!(f, "{n}"),
             Factor::Var(x) => write!(f, "{x}"),
+            Factor::PreInc(x) => write!(f, "++{x}"), 
+            Factor::PostInc(x) => write!(f, "{x}++"),
+            Factor::PreDec(x) => write!(f, "--{x}"),
+            Factor::PostDec(x) => write!(f, "{x}--"),            
             Factor::Aexpr(a) => write!(f, "{a}"),
         }
     }

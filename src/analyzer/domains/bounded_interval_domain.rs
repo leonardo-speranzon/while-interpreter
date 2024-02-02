@@ -4,10 +4,10 @@ use crate::{analyzer::types::domain::AbstractDomain, types::ast::{Num, Operator}
 use super::extended_num::ExtendedNum;
 
 
-// const LOWER: ExtendedNum = ExtendedNum::Num(-1_000);
-// const UPPER: ExtendedNum = ExtendedNum::Num( 1_000);
-const LOWER: ExtendedNum = ExtendedNum::NegInf;
-const UPPER: ExtendedNum = ExtendedNum::PosInf;
+const LOWER: ExtendedNum = ExtendedNum::Num(-20);
+const UPPER: ExtendedNum = ExtendedNum::Num( 20);
+// const LOWER: ExtendedNum = ExtendedNum::NegInf;
+// const UPPER: ExtendedNum = ExtendedNum::PosInf;
 
 
 #[derive(Debug,PartialEq,Clone, Copy)]

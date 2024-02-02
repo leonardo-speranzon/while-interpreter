@@ -21,9 +21,13 @@ pub enum Token {
     Plus,
     Minus,
     Mul,
+    Div,
+    
     AddAssign,
     SubAssign,
     MulAssign,
+    Inc,
+    Dec,
 
     Eq,
     Neq,

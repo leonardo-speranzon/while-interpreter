@@ -17,10 +17,10 @@ impl<N: Display> Display for Aexpr<N> {
         match self {
             Aexpr::Num(n) => write!(f, "{n}"),
             Aexpr::Var(x) => write!(f, "{x}"),
-            Aexpr::PreInc(x) => write!(f, "{x}++"),
-            Aexpr::PreDec(x) => write!(f, "{x}--"),
-            Aexpr::PostInc(x) => write!(f, "++{x}"),
-            Aexpr::PostDec(x) => write!(f, "--{x}"),
+            Aexpr::PreInc(x) => write!(f, "++{x}"),
+            Aexpr::PreDec(x) => write!(f, "--{x}"),
+            Aexpr::PostInc(x) => write!(f, "{x}++"),
+            Aexpr::PostDec(x) => write!(f, "{x}--"),
             Aexpr::BinOp(op, a1, a2) =>
                 write!(f, "({a1} {op} {a2})"),
         }

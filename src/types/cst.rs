@@ -15,6 +15,7 @@ pub enum Aexpr  {
 #[derive(Debug, Clone)]
 pub enum Term {
     Mul   (Box<Term>, Box<Factor>),
+    Div   (Box<Term>, Box<Factor>),
     Factor(Box<Factor>)
 }
 
@@ -22,6 +23,10 @@ pub enum Term {
 pub enum Factor {
     Num  (Num),
     Var  (Var),
+    PreInc (Var),
+    PostInc (Var),
+    PreDec (Var),
+    PostDec (Var),
     Aexpr (Box<Aexpr>)
 }
 

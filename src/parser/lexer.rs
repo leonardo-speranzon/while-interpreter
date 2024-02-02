@@ -69,17 +69,18 @@ impl<'a> From<File> for MyLexer<'a> {
 impl<'a> MyLexer<'a>{
     fn scan(&mut self) -> Result<Option<(TokenPosition, Token)>, ParserError> {
         while let Some(_) = self.chars.next_if(|(_,_,c)|c.is_ascii_whitespace()){}
+        
+        // if let Some(_) = self.chars.next_if(|(_,_,c)|c==&'/') {
+        //     match self.chars.next() {
+        //         Some((l,_,'/')) => {
+        //             while let Some(_) = self.chars.next_if(|(l2,_,_)|l==*l2){}
+        //             return self.scan()
+        //         },
 
-        if let Some(_) = self.chars.next_if(|(_,_,c)|c==&'/') {
-            match self.chars.next() {
-                Some((l,_,'/')) => {
-                    while let Some(_) = self.chars.next_if(|(l2,_,_)|l==*l2){}
-                    return self.scan()
-                },
-                Some((l,c,symbol)) => return Err(ParserError::UnknownSymbol { pos: (l,c), symbol }),
-                None => return Err(ParserError::UnexpectedEOF)
-            }
-        }
+        //         // Some((l,c,symbol)) => return Err(ParserError::UnknownSymbol { pos: (l,c), symbol }),
+        //         // None => return Err(ParserError::UnexpectedEOF)
+        //     }
+        // }
 
         let start_pos: Option<TokenPosition> = self.chars.peek().map(|(l,c,_)|(l.to_owned(),c.to_owned()));
         let tok = match self.chars.next() {
@@ -97,11 +98,11 @@ impl<'a> MyLexer<'a>{
                 }
                 match_keyword(&word).unwrap_or(Token::Id(word))
             }
-            Some((_, _, c@('='|'<'|'>'|'!'|'-'|'+'|'*'|'('|')'|'{'|'}'|':'|';'))) =>{
+            Some((_, _, c@('='|'<'|'>'|'!'|'-'|'+'|'*'|'('|')'|'{'|'}'|':'|';'|'/'))) =>{
                 let mut symbol = c.to_string();
                 let mut  last_valid_tok = match_symbol(&symbol);
 
-                while let Some((_, _, c@('='|'<'|'>'|'!'|'-'|'+'|'*'|'('|')'|'{'|'}'|':'|';'))) = self.chars.peek() {
+                while let Some((_, _, c@('='|'<'|'>'|'!'|'-'|'+'|'*'|'('|')'|'{'|'}'|':'|';'|'/'))) = self.chars.peek() {
                     symbol.push(c.clone());
                     match match_symbol(&symbol){
                         Some(tok) => {
@@ -114,7 +115,12 @@ impl<'a> MyLexer<'a>{
                         last_valid_tok = Some(tok)
                     }
                 }
-
+                if symbol == "//" {
+                    let (cur_line, _)= start_pos.unwrap();
+                    while let Some(_) = self.chars.next_if(|(l,_,_)|cur_line==*l){}
+                    return self.scan()
+                }
+                println!("last_valid_tok: {:?}, symbol: {symbol}",last_valid_tok);
                 match last_valid_tok  {
                     Some(tok) => tok,
                     None => return Err(ParserError::UnknownSymbol { 
@@ -183,6 +189,7 @@ fn match_symbol(s: &str)-> Option<Token>{
         "}" => Some(Token::CurlyClose),
 
         "*" => Some(Token::Mul),
+        "/" => Some(Token::Div),
         "+" => Some(Token::Plus),
         "-" => Some(Token::Minus),
 
@@ -197,6 +204,9 @@ fn match_symbol(s: &str)-> Option<Token>{
         "+=" => Some(Token::AddAssign),
         "-=" => Some(Token::SubAssign),
         "*=" => Some(Token::MulAssign),
+
+        "++" => Some(Token::Inc),
+        "--" => Some(Token::Dec),
         _ => None
     }
 }

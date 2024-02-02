@@ -137,6 +137,12 @@ fn parse_term(cst: &cst::Term) -> ast::Aexpr<Num> {
                 Box::new(parse_term(t)),
                 Box::new(parse_factor(f))
             ),
+        cst::Term::Div(t, f) => 
+            ast::Aexpr::BinOp(
+                ast::Operator::Div,
+                Box::new(parse_term(t)),
+                Box::new(parse_factor(f))
+            ),
         cst::Term::Factor(f) => parse_factor(f),
     }
 }
@@ -144,6 +150,10 @@ fn parse_factor(cst: &cst::Factor) -> ast::Aexpr<Num> {
     match cst {
         cst::Factor::Num(n) => ast::Aexpr::Num((*n).into()),
         cst::Factor::Var(x) => ast::Aexpr::Var(x.clone()),
+        cst::Factor::PreInc(x) => ast::Aexpr::PreInc(x.clone()),
+        cst::Factor::PostInc(x) => ast::Aexpr::PostInc(x.clone()),
+        cst::Factor::PreDec(x) => ast::Aexpr::PreDec(x.clone()),
+        cst::Factor::PostDec(x) => ast::Aexpr::PostDec(x.clone()),
         cst::Factor::Aexpr(a) => parse_aexpr(a),
     }
 }

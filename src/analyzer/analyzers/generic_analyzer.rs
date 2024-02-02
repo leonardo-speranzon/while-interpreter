@@ -54,6 +54,18 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for GenericAnal
                 match (*a1.clone(),*a2.clone()) {
                     (Aexpr::Num(c), Aexpr::Var(x)) | (Aexpr::Var(x), Aexpr::Num(c)) =>
                         tests::test_eq_case_1(s, x, c),
+                    (Aexpr::Num(c), ref post@Aexpr::PostInc(ref x)) | (ref post@Aexpr::PostInc(ref x), Aexpr::Num(c)) |
+                    (Aexpr::Num(c), ref post@Aexpr::PostDec(ref x)) | (ref post@Aexpr::PostDec(ref x), Aexpr::Num(c))=>{
+                        let s = tests::test_eq_case_1(s, x.clone(), c);
+                        let (_, s) = Self::eval_aexpr(post, s);
+                        return s;
+                    },
+                    (Aexpr::Num(c), ref pre@Aexpr::PreInc(ref x)) | (ref pre@Aexpr::PreInc(ref x), Aexpr::Num(c)) |
+                    (Aexpr::Num(c), ref pre@Aexpr::PreDec(ref x)) | (ref pre@Aexpr::PreDec(ref x), Aexpr::Num(c))=>{
+                        let (_, s) = Self::eval_aexpr(pre, s);
+                        let s = tests::test_eq_case_1(s, x.clone(), c);
+                        return s;
+                    },
                     (Aexpr::Var(x), Aexpr::Var(y)) => 
                         tests::test_eq_case_2(s, x, y, D::from(0)),
                     (a1,a2) => {
@@ -70,8 +82,31 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for GenericAnal
             },
             Bexpr::LessEq(a1, a2) => {
                 match (*a1.clone(),*a2.clone()) {
-                    (Aexpr::Num(c), Aexpr::Var(x)) | (Aexpr::Var(x), Aexpr::Num(c)) => 
+                    (Aexpr::Var(x), Aexpr::Num(c)) => 
                         tests::test_lte_case_1(s, x, c),
+                    (Aexpr::Num(c), Aexpr::Var(x)) => 
+                        tests::test_gte_case_1(s, x, c),
+                    (ref post@Aexpr::PostInc(ref x), Aexpr::Num(c)) |(ref post@Aexpr::PostDec(ref x), Aexpr::Num(c)) => {
+                        let s = tests::test_lte_case_1(s, x.clone(), c);
+                        let (_, s) = Self::eval_aexpr(post, s);
+                        return s;                     
+                    }
+                    (Aexpr::Num(c), ref post@Aexpr::PostDec(ref x)) | (Aexpr::Num(c), ref post@Aexpr::PostInc(ref x)) =>{
+                        let s = tests::test_gte_case_1(s, x.clone(), c);
+                        let (_, s) = Self::eval_aexpr(post, s);
+                        return s;
+                    },
+                    (ref pre@Aexpr::PreInc(ref x), Aexpr::Num(c)) | (ref pre@Aexpr::PreDec(ref x), Aexpr::Num(c)) => {
+                        let (_, s) = Self::eval_aexpr(pre, s);
+                        let s = tests::test_lte_case_1(s, x.clone(), c);
+                        return s;
+                    }
+                    (Aexpr::Num(c), ref pre@Aexpr::PreDec(ref x)) | (Aexpr::Num(c), ref pre@Aexpr::PreInc(ref x))=>{
+                        let (_, s) = Self::eval_aexpr(pre, s);
+                        let s = tests::test_gte_case_1(s, x.clone(), c);
+                        return s;
+                    },
+
                     (Aexpr::Var(x), Aexpr::Var(y)) =>
                         tests::test_lte_case_2(s, x, y),
                     (_, _) => {
@@ -93,6 +128,18 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for GenericAnal
                         match (*a1.clone(),*a2.clone()) {
                             (Aexpr::Num(c), Aexpr::Var(x)) | (Aexpr::Var(x), Aexpr::Num(c)) => 
                                 tests::test_neq_case_1(s, x, c),
+                            (Aexpr::Num(c), ref post@Aexpr::PostInc(ref x)) | (ref post@Aexpr::PostInc(ref x), Aexpr::Num(c)) |
+                            (Aexpr::Num(c), ref post@Aexpr::PostDec(ref x)) | (ref post@Aexpr::PostDec(ref x), Aexpr::Num(c))=>{
+                                let s = tests::test_neq_case_1(s, x.clone(), c);
+                                let (_, s) = Self::eval_aexpr(post, s);
+                                return s;
+                            },
+                            (Aexpr::Num(c), ref pre@Aexpr::PreInc(ref x)) | (ref pre@Aexpr::PreInc(ref x), Aexpr::Num(c)) |
+                            (Aexpr::Num(c), ref pre@Aexpr::PreDec(ref x)) | (ref pre@Aexpr::PreDec(ref x), Aexpr::Num(c))=>{
+                                let (_, s) = Self::eval_aexpr(pre, s);
+                                let s = tests::test_neq_case_1(s, x.clone(), c);
+                                return s;
+                            },
                             // (Aexpr::Var(x), Aexpr::Var(y)) => 
                             //     tests::test_gt_case_2(s, x, y),
                             (_, _) => {
@@ -105,8 +152,31 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for GenericAnal
                     },
                     Bexpr::LessEq(a1, a2) => {
                         match (*a1.clone(),*a2.clone()) {
-                            (Aexpr::Num(c), Aexpr::Var(x)) | (Aexpr::Var(x), Aexpr::Num(c)) => 
+                            (Aexpr::Var(x), Aexpr::Num(c)) => 
                                 tests::test_gt_case_1(s, x, c),
+                            (Aexpr::Num(c), Aexpr::Var(x)) => 
+                                tests::test_lt_case_1(s, x, c),
+                            (ref post@Aexpr::PostInc(ref x), Aexpr::Num(c)) |(ref post@Aexpr::PostDec(ref x), Aexpr::Num(c)) => {
+                                let s = tests::test_gt_case_1(s, x.clone(), c);
+                                let (_, s) = Self::eval_aexpr(post, s);
+                                return s;                     
+                            }
+                            (Aexpr::Num(c), ref post@Aexpr::PostDec(ref x)) | (Aexpr::Num(c), ref post@Aexpr::PostInc(ref x)) =>{
+                                let s = tests::test_lt_case_1(s, x.clone(), c);
+                                let (_, s) = Self::eval_aexpr(post, s);
+                                return s;
+                            },
+                            (ref pre@Aexpr::PreInc(ref x), Aexpr::Num(c)) | (ref pre@Aexpr::PreDec(ref x), Aexpr::Num(c)) => {
+                                let (_, s) = Self::eval_aexpr(pre, s);
+                                let s = tests::test_gt_case_1(s, x.clone(), c);
+                                return s;
+                            }
+                            (Aexpr::Num(c), ref pre@Aexpr::PreDec(ref x)) | (Aexpr::Num(c), ref pre@Aexpr::PreInc(ref x))=>{
+                                let (_, s) = Self::eval_aexpr(pre, s);
+                                let s = tests::test_lt_case_1(s, x.clone(), c);
+                                return s;
+                            },
+                            
                             (Aexpr::Var(x), Aexpr::Var(y)) => 
                                 tests::test_gt_case_2(s, x, y),
                             (_, _) => {

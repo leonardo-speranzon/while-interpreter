@@ -172,6 +172,11 @@ impl<L: Lexer> ConcreteParser<L> {
                     let f = self.parse_factor()?;
                     term = Term::Mul(Box::new(term), Box::new(f));
                 }
+                Some(Token::Div) => {
+                    self.lexer.match_next(Token::Div)?;     
+                    let f = self.parse_factor()?;
+                    term = Term::Div(Box::new(term), Box::new(f));
+                }
                 _ => break,
             }
         }
@@ -185,13 +190,31 @@ impl<L: Lexer> ConcreteParser<L> {
             },
             Some(Token::Id(x)) => {
                 self.lexer.match_next(Token::Id(x.clone()))?;
-                Ok(Factor::Var(x))
+                match self.lexer.peek() {
+                    Some(Token::Inc) => {
+                        self.lexer.match_next(Token::Inc)?;
+                        Ok(Factor::PostInc(x))
+                    }
+                    Some(Token::Dec) => {
+                        self.lexer.match_next(Token::Dec)?;
+                        Ok(Factor::PostDec(x))
+                    }
+                    _ => Ok(Factor::Var(x))
+                }
             },
             Some(Token::BracketOpen) => {
                 self.lexer.match_next(Token::BracketOpen)?;
                 let a = self.parse_aexpr()?;
                 self.lexer.match_next(Token::BracketClose)?;
                 Ok(Factor::Aexpr(Box::new(a)))
+            }
+            Some(Token::Inc) => {
+                self.lexer.match_next(Token::Inc)?;
+                Ok(Factor::PreInc(self.parse_id()?))
+            }
+            Some(Token::Dec) => {
+                self.lexer.match_next(Token::Dec)?;       
+                Ok(Factor::PreDec(self.parse_id()?))
             }
             _ => Err(self.lexer.unexpected_error())
         }    

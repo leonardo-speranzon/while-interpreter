@@ -111,7 +111,7 @@ fn stm_to_program<D: Clone>(stm: Statement<D>) -> Program<D>{
             let offset = 1;
             let exit_label = p1.exit + 1;
             let mut arcs = vec![
-                (0,Command::Test(*b.clone()), 1),
+                (0,Command::Test(*b.clone()), if p1.labels_num == 1 { 0 } else { 1 }),
                 (0,Command::Test(Bexpr::Not(b)), exit_label)
             ];
             let mut p1_arcs: Vec<Arc<D>> = p1.arcs

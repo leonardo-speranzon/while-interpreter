@@ -45,6 +45,26 @@ pub fn test_lte_case_2<D: AbstractDomain, B: AbstractState<D>>(mut state: B, x: 
     state
 }
 
+
+
+/**
+ * X - c >= 0
+ */
+pub fn test_gte_case_1<D: AbstractDomain, B: AbstractState<D>>(mut state: B, x: String, c: D)-> B{
+    state.set(x.clone(), state.get(&x).glb(&D::all_gte(&c)));
+    state
+}
+
+
+
+/**
+ * X - c > 0
+ */
+pub fn test_lt_case_1<D: AbstractDomain, B: AbstractState<D>>(mut state: B, x: String, c: D)-> B{
+    state.set(x.clone(), state.get(&x).glb(&D::all_lt(&c)));
+    state
+}
+
 /**
  * X - c > 0
  */
