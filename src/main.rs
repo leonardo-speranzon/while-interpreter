@@ -5,7 +5,7 @@ use interpreter::{types::State, interpreter::eval_statement};
 use parser::{ parse_string, parse_file};
 use types::{ast::Statement, errors::{ParserError, RuntimeError}};
 
-use crate::analyzer::printers::map_to_str;
+use crate::analyzer::printers::print_stm_with_inv;
 
 mod types;
 mod interpreter;
@@ -97,14 +97,20 @@ fn main() {
             println!("╔═════════════════╗");
             println!("║ Analyzer Result ║");
             println!("╚═════════════════╝");
-            println!("{}", map_to_str(&result));
-            println!("");
-            println!("FINAL INVARIANT: {}", result.get(&prog_int.get_end_label()).unwrap());
-            println!("");
+            println!("{}", print_stm_with_inv(ast));
+            println!();
             println!("LOOP INVARIANTS:");
-            for l in prog_int.get_loop_label() {
-                println!("({l}) {}", result.get(l).unwrap())
+            let mut loop_labels = prog_int.get_loop_label().clone();
+            loop_labels.sort();
+            
+            for (i, l) in loop_labels.iter().enumerate() {
+                println!("(i{}) {}", i+1, result.get(l).unwrap())
             }
+
+            // println!("{}", map_to_str(&result));
+
+            println!();
+            println!("FINAL INVARIANT: {}", result.get(&prog_int.get_end_label()).unwrap());
         },
     }
 
