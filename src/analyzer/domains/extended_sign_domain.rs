@@ -1,4 +1,4 @@
-use std::{fmt::Display, ops::{Add, Div, Mul, Sub}};
+use std::{fmt::Display, ops::{Add, Div, Mul, Sub}, str::FromStr};
 
 use crate::types::ast::{Num, Operator};
 use crate::analyzer::types::domain::AbstractDomain;
@@ -36,6 +36,21 @@ impl From<Num> for ExtendedSign{
             std::cmp::Ordering::Less => ExtendedSign{positive:false, zero: false, negative: true },
             std::cmp::Ordering::Equal => ExtendedSign{positive:false, zero: true, negative: false },
             std::cmp::Ordering::Greater => ExtendedSign{positive:true, zero: false, negative: false },
+        }
+    }
+}
+impl FromStr for ExtendedSign{
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "-" => Ok(Self{positive:false, zero:false, negative:true}),
+            "0" => Ok(Self{positive:false, zero:true, negative:false}),
+            "+" => Ok(Self{positive:true, zero:false, negative:false}),
+            "0+" => Ok(Self{positive:true, zero:true, negative:false}),
+            "-0" => Ok(Self{positive:false, zero:true, negative:true}),
+            "-+" => Ok(Self{positive:true, zero:false, negative:true}),
+            _ => Err(todo!())
         }
     }
 }

@@ -120,7 +120,6 @@ impl<'a> MyLexer<'a>{
                     while let Some(_) = self.chars.next_if(|(l,_,_)|cur_line==*l){}
                     return self.scan()
                 }
-                println!("last_valid_tok: {:?}, symbol: {symbol}",last_valid_tok);
                 match last_valid_tok  {
                     Some(tok) => tok,
                     None => return Err(ParserError::UnknownSymbol { 

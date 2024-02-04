@@ -1,4 +1,4 @@
-use std::{fmt::Display, cmp::{min, max}, ops::{Add, Div, Mul, Sub}};
+use std::{cmp::{min, max}, fmt::Display, ops::{Add, Div, Mul, Sub}, str::FromStr};
 use crate::types::ast::{Num, Operator};
 use crate::analyzer::types::domain::AbstractDomain;
 use super::extended_num::ExtendedNum;
@@ -41,6 +41,13 @@ impl PartialOrd for Interval{
 impl From<Num> for Interval{
     fn from(value: Num) -> Self {
         Interval::Range(ExtendedNum::Num(value),ExtendedNum::Num(value))
+    }
+}
+impl FromStr for Interval{
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        todo!()
     }
 }
 

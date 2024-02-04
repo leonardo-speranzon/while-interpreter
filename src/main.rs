@@ -1,9 +1,9 @@
 use std::{collections::HashMap, fmt::Display, fs::File};
-use analyzer::{domains::{bounded_interval_domain::BoundedInterval, extended_sign_domain::ExtendedSign, sign_domain::Sign}, analyzers::generic_analyzer::GenericAnalyzer, states::hashmap_state::HashMapState, types::{analyzer::StaticAnalyzer, program::{Label, Program, ProgramInterface}, state::AbstractState}};
-use config::Config;
+use analyzer::{domains::{bounded_interval_domain::BoundedInterval, extended_sign_domain::ExtendedSign, sign_domain::Sign}, analyzers::generic_analyzer::GenericAnalyzer, states::hashmap_state::HashMapState, types::{analyzer::StaticAnalyzer, domain::AbstractDomain, program::{Label, Program, ProgramInterface}, state::AbstractState}};
+use config::{AnalyzerConfiguration, Config};
 use interpreter::{types::State, interpreter::eval_statement};
 use parser::{ parse_string, parse_file};
-use types::{ast::Statement, errors::{ParserError, RuntimeError}};
+use types::{ast::{Num, Statement}, errors::{ParserError, RuntimeError}};
 
 use crate::analyzer::printers::print_stm_with_inv;
 
@@ -77,22 +77,10 @@ fn main() {
         Config::AnalyzerConfiguration { config, .. } => {  
             let prog_int: Box<dyn ProgramInterface>; //: Program<dyn AbstractDomain> =   
             let result: HashMap<Label, Box<dyn Display>>;
-            match config.domain {
-                config::Domain::Sign => {
-                    let prog: Program<Sign> = GenericAnalyzer::<_, HashMapState<_>>::init(ast.clone());
-                    prog_int= Box::new(prog.clone()) as Box<dyn ProgramInterface>;
-                    result = to_boxed_state(GenericAnalyzer::analyze(prog, HashMapState::top(), config.iteration_strategy));
-                }
-                config::Domain::ExtendedSign => {
-                    let prog: Program<ExtendedSign> = GenericAnalyzer::<_, HashMapState<_>>::init(ast.clone());
-                    prog_int= Box::new(prog.clone()) as Box<dyn ProgramInterface>;
-                    result = to_boxed_state(GenericAnalyzer::analyze(prog, HashMapState::top(), config.iteration_strategy));
-                }
-                config::Domain::BoundedInterval => {
-                    let prog: Program<BoundedInterval> = GenericAnalyzer::<_, HashMapState<_>>::init(ast.clone());
-                    prog_int= Box::new(prog.clone()) as Box<dyn ProgramInterface>;
-                    result = to_boxed_state(GenericAnalyzer::analyze(prog, HashMapState::top(), config.iteration_strategy));
-                }
+            (prog_int, result) = match config.domain {
+                config::Domain::Sign => analyze::<Sign>(ast.clone(), config),                
+                config::Domain::ExtendedSign => analyze::<ExtendedSign>(ast.clone(), config),
+                config::Domain::BoundedInterval => analyze::<BoundedInterval>(ast.clone(), config),
             };
             println!("╔═════════════════╗");
             println!("║ Analyzer Result ║");
@@ -122,4 +110,16 @@ fn to_boxed_state<D:Display + 'static>(r: HashMap<Label,D>)->HashMap<Label, Box<
     r.into_iter()
     .map(|(l,s)|(l, Box::new(s) as Box<dyn Display>))
     .collect::<HashMap<_,_>>()
+}
+
+fn analyze<D: AbstractDomain + 'static>(ast: Statement<Num>, config: AnalyzerConfiguration) -> (Box<dyn ProgramInterface>, HashMap<Label, Box<dyn Display>>){
+    let prog: Program<D> = GenericAnalyzer::<_, HashMapState<_>>::init(ast);
+    let prog_int= Box::new(prog.clone()) as Box<dyn ProgramInterface>;
+    let result = to_boxed_state(GenericAnalyzer::analyze(
+        prog,
+        config.init_state
+            .map(|s|s.parse().unwrap())
+            .unwrap_or(HashMapState::top()),
+        config.iteration_strategy));
+    (prog_int, result)
 }

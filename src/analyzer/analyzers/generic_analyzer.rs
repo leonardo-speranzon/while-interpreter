@@ -248,9 +248,12 @@ impl<D: AbstractDomain, B: AbstractState<D>> GenericAnalyzer<D,B>{
     fn make_iteration(prog: &Program<D>, states: HashMap<Label, B>, step_type: StepType) -> HashMap<Label, B>{
         let mut all_states: HashMap<Label, B> = HashMap::new();
         for i in 0..=(prog.labels_num-1) {
-            if i == prog.entry { all_states.insert(i, states.get(&i).unwrap().clone()); continue; }
             let arcs = prog.get_entering_arcs(i);
-            let mut new_state = B::bottom();
+            let mut new_state = if i == prog.entry{
+                states.get(&i).unwrap().clone()
+            }else{
+                B::bottom()
+            };
             // println!("label {i} entering arcs:{:?}", &arcs);
             for (l,cmd,_) in arcs {
                 match  states.get(l) {

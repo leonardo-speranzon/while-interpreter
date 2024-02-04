@@ -39,7 +39,7 @@ impl<D: Clone> Program<D>{
         let points = self.arcs.iter()
             .counts_by(|(_,_,l)| l)
             .iter()
-            .filter_map(|(l,n)| if n>=&2 {Some(**l)} else {None})
+            .filter_map(|(l,n)| if n>=&2 || (l==&&0 && n==&1){Some(**l)} else {None})
             .collect::<Vec<_>>();
         self.widening_points = points;
     }

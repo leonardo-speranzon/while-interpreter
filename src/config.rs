@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use clap::{builder::PossibleValue, Arg, ArgAction, ArgMatches, Command, ValueEnum};
 
-use crate::{analyzer::types::analyzer::IterationStrategy, interpreter::types::State, types::ast::Num};
+use crate::{analyzer::{domains::bounded_interval_domain::BoundedInterval, states::hashmap_state::HashMapState, types::{analyzer::IterationStrategy, domain::AbstractDomain}}, interpreter::types::State, types::ast::Num};
 
 
 #[derive(Debug)]
@@ -44,7 +44,7 @@ impl ValueEnum for Domain {
 pub struct AnalyzerConfiguration{
     pub domain: Domain,
     pub iteration_strategy: IterationStrategy,
-    // pub init_state: Option<Box<HashMapState<>>>,
+    pub init_state: Option<String>,
 }
 
 #[derive(Debug)]
@@ -70,8 +70,8 @@ impl Config {
         let interpreter_cmd = Command::new("run")
             .arg(Arg::new("state")     
                 .long("state")
-                .help("Set initial state, must be in format <var-name>:<value>,<var-name>:<value>,...")
-                // .long_help("Set initial state, must be in format <var-name>:<value>,<var-name>:<value>,...")
+                .help("Set initial state, must be in format <var-name>:<value>;<var-name>:<value>;...")
+                // .long_help("Set initial state, must be in format <var-name>:<value>;<var-name>:<value>;...")
                 .value_parser(parse_state::<Num>))
             .args(parser_args.clone());
 
@@ -79,6 +79,13 @@ impl Config {
             .arg(Arg::new("domain").long("domain").short('d').value_parser(clap::builder::EnumValueParser::<Domain>::new()))
             .arg(Arg::new("widening") .short('W').help("Use widening") .action(ArgAction::SetTrue))
             .arg(Arg::new("narrowing").short('N').help("Use narrowing").action(ArgAction::SetTrue).requires("widening"))
+            .arg(Arg::new("state")     
+                .long("state")
+                .help("Set initial state, must be in format <var-name>:<value>;<var-name>:<value>;...")
+                // .long_help("Set initial state, must be in format <var-name>:<value>;<var-name>:<value>;...")
+                // .if
+                // .value_parser(parse_abs_state::<BoundedInterval>)
+            )
             .args(parser_args);
             // .arg(Arg::new("lower").long("lower-bound").short('l').help("Lower bound").value_parser(clap::value_parser!(Num)).action(ArgAction::Set).required(true))
 
@@ -107,7 +114,8 @@ impl Config {
                         (false, _) => IterationStrategy::Simple,
                         (true, false) => IterationStrategy::Widening,
                         (true, true) => IterationStrategy::WideningAndNarrowing,
-                    }
+                    },
+                    init_state: sub_m.get_one::<String>("state").cloned() //sub_m.get_one::<HashMapState<BoundedInterval>>("state").cloned(),
                 }
             },
             _ => todo!(),
@@ -137,7 +145,7 @@ impl From<&ArgMatches> for ParserConfig {
 
 fn parse_state<T : FromStr>(str_state: &str) -> Result<State<T>, String> {
     str_state
-        .split(',')
+        .split(';')
         .map(|pair_str|{
             match pair_str.split_once(':'){
                 Some((var,val)) => {

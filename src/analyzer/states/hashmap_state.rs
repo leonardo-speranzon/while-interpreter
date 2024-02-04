@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, str::FromStr};
 
 use iter_tools::Itertools;
 
@@ -7,7 +7,7 @@ use crate::{analyzer::types::{domain::AbstractDomain, state::AbstractState}, int
 
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct HashMapState<D>(Option<State<D>>);
+pub struct HashMapState<D>(pub Option<State<D>>);
 
 impl<D: AbstractDomain> AbstractState<D> for HashMapState<D>  {
     fn bottom() -> Self{
@@ -112,6 +112,27 @@ impl<D: AbstractDomain> AbstractState<D> for HashMapState<D>  {
 impl<D: AbstractDomain> PartialOrd for HashMapState<D> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         todo!()
+    }
+}
+
+impl<D:AbstractDomain> FromStr for HashMapState<D> {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let state = s
+            .split(';')
+            .map(|pair_str|{
+                match pair_str.split_once(':'){
+                    Some((var,val)) => {
+                        match val.parse::<D>() {
+                            Ok(n) => Ok((var.to_string(), n)),
+                            Err(_) => Err(format!("Wrong format of state pair, expected '<var-name>:<value>' but found '{pair_str}'")),
+                        }                                    
+                    }
+                    None => Err(format!("Wrong format of state pair, expected '<var-name>:<value>' but found '{pair_str}'")),    
+                }
+            }).collect::<Result<_,_>>()?;
+        Ok(Self(Some(state)))
     }
 }
 

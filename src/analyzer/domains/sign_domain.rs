@@ -1,4 +1,4 @@
-use std::{fmt::Display, ops::{Add, Div, Mul, Sub}};
+use std::{fmt::Display, ops::{Add, Div, Mul, Sub}, str::FromStr};
 use crate::types::ast::{Operator, Num};
 use crate::analyzer::types::domain::AbstractDomain;
 
@@ -28,6 +28,18 @@ impl From<Num> for Sign{
             std::cmp::Ordering::Less => Sign::Negative,
             std::cmp::Ordering::Equal => Sign::Zero,
             std::cmp::Ordering::Greater => Sign::Positive,
+        }
+    }
+}
+impl FromStr for Sign{
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "-" => Ok(Self::Negative),
+            "0" => Ok(Self::Zero),
+            "+" => Ok(Self::Positive),
+            _ => Err(todo!())
         }
     }
 }

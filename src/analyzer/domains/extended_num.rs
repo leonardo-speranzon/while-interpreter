@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, fmt::Display, ops::{Add, Div, Mul, Sub}};
+use std::{cmp::Ordering, fmt::Display, ops::{Add, Div, Mul, Sub}, str::FromStr};
 
 use crate::types::ast::Num;
 
@@ -8,6 +8,22 @@ pub enum ExtendedNum{
     NegInf,
     Num(Num)
 }
+
+impl FromStr for ExtendedNum {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "-inf" => Ok(Self::NegInf),
+            "inf" | "+inf" => Ok(Self::PosInf),
+            _ => match s.parse() {
+                Ok(n) => Ok(Self::Num(n)),
+                Err(_) => Err(format!("Invalid extendedNum: {s}")),
+            }
+        }
+    }
+}
+
 impl PartialOrd for ExtendedNum {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))

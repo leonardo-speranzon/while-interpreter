@@ -1,8 +1,9 @@
 use std::ops::{Add, Div, Mul, Sub};
 use std::fmt::{Display, Debug};
+use std::str::FromStr;
 use crate::types::ast::{Num, Operator};
 
-pub trait AbstractDomain : Debug + Display + PartialOrd + Clone + Sized + From<Num>
+pub trait AbstractDomain : Debug + Display + PartialOrd + Clone + Sized + From<Num> + FromStr
                            + Add<Output=Self> + Sub<Output=Self> + Mul<Output=Self> + Div<Output=Self>  {
     fn bottom() -> Self;
     fn top() -> Self;

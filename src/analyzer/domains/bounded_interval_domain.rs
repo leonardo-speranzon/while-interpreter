@@ -1,4 +1,6 @@
-use std::{cmp::{max, min,}, fmt::Display, ops::{Add, Sub,Mul,Div}};
+use std::{cmp::{max, min,}, fmt::Display, ops::{Add, Div, Mul, Sub}, str::FromStr};
+use iter_tools::Itertools;
+
 use crate::{analyzer::types::domain::AbstractDomain, types::ast::{Num, Operator}};
 
 use super::extended_num::ExtendedNum;
@@ -49,6 +51,37 @@ impl PartialOrd for BoundedInterval{
 impl From<Num> for BoundedInterval{
     fn from(value: Num) -> Self {
         BoundedInterval::new(ExtendedNum::Num(value),ExtendedNum::Num(value))
+    }
+}
+impl FromStr for BoundedInterval{
+    type Err = String;
+
+    // "[1,10]", "[-inf,10]", "[-inf,inf]"
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if let Ok(n) = s.parse::<Num>(){
+            return Ok(Self::new(ExtendedNum::Num(n),ExtendedNum::Num(n)));
+        };
+        let mut chars = s.chars();
+        match chars.next() {
+            Some('[') => (),
+            _ => return Err(format!("Expected \"[l,u]\", found {s}")),
+        }
+        let lower: String = chars.take_while_ref(|c|c!=&',').collect();
+        
+        match chars.next() {
+            Some(',') => (),
+            _ => return Err(format!("Expected \"[l,u]\", found {s}")),
+        }
+        match chars.next_back() {
+            Some(']') => (),
+            _ => return Err(format!("Expected \"[l,u]\", found {s}")),
+        }
+
+        let upper: String = chars.collect();
+
+        let lower = lower.parse()?;
+        let upper = upper.parse()?;
+        Ok(Self::new(lower,upper))
     }
 }
 
