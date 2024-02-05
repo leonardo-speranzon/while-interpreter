@@ -1,4 +1,4 @@
-use crate::analyzer::types::program::{Arc, Command, Label};
+use crate::analyzer::types::program::{Command, Label};
 use crate::analyzer::types::{program::Program, state::AbstractState};
 use crate::analyzer::types::domain::AbstractDomain;
 use crate::analyzer::types::analyzer::{IterationStrategy, StaticAnalyzer};
@@ -230,10 +230,6 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for GenericAnal
                 }
             }   
         }
-
-        // println!("\nFINAL STATES:\n{}\n", map_to_str(&all_state));
-
-
         all_state
     }
 }
@@ -254,7 +250,6 @@ impl<D: AbstractDomain, B: AbstractState<D>> GenericAnalyzer<D,B>{
             }else{
                 B::bottom()
             };
-            // println!("label {i} entering arcs:{:?}", &arcs);
             for (l,cmd,_) in arcs {
                 match  states.get(l) {
                     Some(s) => new_state = new_state.lub(Self::apply_cmd(cmd, s)),
@@ -263,7 +258,6 @@ impl<D: AbstractDomain, B: AbstractState<D>> GenericAnalyzer<D,B>{
             }
 
             if prog.widening_points.contains(&i) {
-                // print!("{} ∇ {} = ", states.get(&i).unwrap(), new_state);
                 let old_state = states
                     .get(&i)
                     .expect(&format!("Missing AbsState for label {i}"))
@@ -273,7 +267,6 @@ impl<D: AbstractDomain, B: AbstractState<D>> GenericAnalyzer<D,B>{
                     StepType::WideningStep => old_state.widening(new_state),
                     StepType::NarrowingStep => old_state.narrowing(new_state),
                 }
-                // println!("{}", new_state);
             }
 
             all_states.insert(i, new_state);

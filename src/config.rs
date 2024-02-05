@@ -1,8 +1,9 @@
 use std::str::FromStr;
 
-use clap::{builder::PossibleValue, Arg, ArgAction, ArgMatches, Command, ValueEnum};
+use clap::{builder::{EnumValueParser, PossibleValue}, Arg, ArgAction, ArgMatches, Command, ValueEnum};
+use iter_tools::Itertools;
 
-use crate::{analyzer::{domains::bounded_interval_domain::BoundedInterval, states::hashmap_state::HashMapState, types::{analyzer::IterationStrategy, domain::AbstractDomain}}, interpreter::types::State, types::ast::Num};
+use crate::{analyzer::{domains::extended_num::ExtendedNum, types::analyzer::IterationStrategy}, interpreter::types::State, types::ast::Num};
 
 
 #[derive(Debug)]
@@ -45,6 +46,8 @@ pub struct AnalyzerConfiguration{
     pub domain: Domain,
     pub iteration_strategy: IterationStrategy,
     pub init_state: Option<String>,
+    pub domain_lower_bound: Option<ExtendedNum>,
+    pub domain_upper_bound: Option<ExtendedNum>,
 }
 
 #[derive(Debug)]
@@ -58,13 +61,13 @@ impl Config {
     pub fn new() -> Config{
 
         let parser_args = [
-            Arg::new("filename"),
+            Arg::new("filename").required(true),
             Arg::new("token")     .long("token")     .short('t').help("Print token list").action(ArgAction::SetTrue),
             Arg::new("ast")       .long("ast")       .short('a').help("Print raw ast")   .action(ArgAction::SetTrue),
             Arg::new("pretty-ast").long("pretty-ast").short('A').help("Print pretty ast").action(ArgAction::SetTrue),
             Arg::new("cst")       .long("cst")       .short('c').help("Print raw ast")   .action(ArgAction::SetTrue),
             Arg::new("pretty-cst").long("pretty-cst").short('C').help("Print pretty ast").action(ArgAction::SetTrue),
-        ] ;
+        ];
 
 
         let interpreter_cmd = Command::new("run")
@@ -73,10 +76,11 @@ impl Config {
                 .help("Set initial state, must be in format <var-name>:<value>;<var-name>:<value>;...")
                 // .long_help("Set initial state, must be in format <var-name>:<value>;<var-name>:<value>;...")
                 .value_parser(parse_state::<Num>))
-            .args(parser_args.clone());
+            .args(parser_args.clone())
+            .arg_required_else_help(true);
 
         let analyzer_cmd = Command::new("analyze")
-            .arg(Arg::new("domain").long("domain").short('d').value_parser(clap::builder::EnumValueParser::<Domain>::new()))
+            .arg(Arg::new("domain").long("domain").short('d').value_parser(EnumValueParser::<Domain>::new()).default_value("bounded-interval"))
             .arg(Arg::new("widening") .short('W').help("Use widening") .action(ArgAction::SetTrue))
             .arg(Arg::new("narrowing").short('N').help("Use narrowing").action(ArgAction::SetTrue).requires("widening"))
             .arg(Arg::new("state")     
@@ -86,19 +90,21 @@ impl Config {
                 // .if
                 // .value_parser(parse_abs_state::<BoundedInterval>)
             )
-            .args(parser_args);
+            // .arg(Arg::new("lower-bound").short('l').help("Set a lower bound for the domain").value_parser(str::parse::<ExtendedNum>).allow_hyphen_values(true))
+            // .arg(Arg::new("upper-bound").short('u').help("Set an upper bound for the domain").value_parser(str::parse::<ExtendedNum>).allow_hyphen_values(true))
+            .arg(Arg::new("bounds").short('b').help("Set bounds for the domain").value_parser(parse_bounds))
+            .args(parser_args)
+            .arg_required_else_help(true);
             // .arg(Arg::new("lower").long("lower-bound").short('l').help("Lower bound").value_parser(clap::value_parser!(Num)).action(ArgAction::Set).required(true))
 
             
-
         let matches = Command::new("While Interprer")
             .subcommand(interpreter_cmd)
             .subcommand(analyzer_cmd)
             .subcommand_required(true)
+            .arg_required_else_help(true)
             .get_matches();
     
-        // println!("{:#?}", matches.);
-        // todo!();
         match matches.subcommand() {
             Some(("run", sub_m)) => Config::InterpreterConfiguration { 
                 parser_configuration: ParserConfig::from(sub_m),
@@ -115,7 +121,11 @@ impl Config {
                         (true, false) => IterationStrategy::Widening,
                         (true, true) => IterationStrategy::WideningAndNarrowing,
                     },
-                    init_state: sub_m.get_one::<String>("state").cloned() //sub_m.get_one::<HashMapState<BoundedInterval>>("state").cloned(),
+                    init_state: sub_m.get_one::<String>("state").cloned(), //sub_m.get_one::<HashMapState<BoundedInterval>>("state").cloned(),
+                    // domain_lower_bound: sub_m.get_one::<ExtendedNum>("lower-bound").cloned(),
+                    // domain_upper_bound: sub_m.get_one::<ExtendedNum>("upper-bound").cloned(),
+                    domain_lower_bound: sub_m.get_one::<(ExtendedNum,ExtendedNum)>("bounds").map(|(l,_)|*l),
+                    domain_upper_bound: sub_m.get_one::<(ExtendedNum,ExtendedNum)>("bounds").map(|(_,u)|*u),
                 }
             },
             _ => todo!(),
@@ -158,3 +168,30 @@ fn parse_state<T : FromStr>(str_state: &str) -> Result<State<T>, String> {
             }
         }).collect::<Result<_,_>>()
 }    
+
+fn parse_bounds(s: &str) -> Result<(ExtendedNum, ExtendedNum), String> {
+    if let Ok(n) = s.parse::<Num>(){
+        return Ok((ExtendedNum::Num(n),ExtendedNum::Num(n)));
+    };
+    let mut chars = s.chars();
+    match chars.next() {
+        Some('[') => (),
+        _ => return Err(format!("Expected \"[l,u]\", found {s}")),
+    }
+    let lower: String = chars.take_while_ref(|c|c!=&',').collect();
+    
+    match chars.next() {
+        Some(',') => (),
+        _ => return Err(format!("Expected \"[l,u]\", found {s}")),
+    }
+    match chars.next_back() {
+        Some(']') => (),
+        _ => return Err(format!("Expected \"[l,u]\", found {s}")),
+    }
+
+    let upper: String = chars.collect();
+
+    let lower = lower.parse()?;
+    let upper = upper.parse()?;
+    Ok((lower,upper))
+}

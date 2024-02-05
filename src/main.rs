@@ -5,7 +5,10 @@ use interpreter::{types::State, interpreter::eval_statement};
 use parser::{ parse_string, parse_file};
 use types::{ast::{Num, Statement}, errors::{ParserError, RuntimeError}};
 
-use crate::analyzer::printers::print_stm_with_inv;
+use crate::{analyzer::{domains::{ extended_num::ExtendedNum}, printers::print_stm_with_inv}, config::Domain};
+
+#[macro_use]
+extern crate lazy_static;
 
 mod types;
 mod interpreter;
@@ -75,9 +78,13 @@ fn main() {
             }
         },
         Config::AnalyzerConfiguration { config, .. } => {  
-            let prog_int: Box<dyn ProgramInterface>; //: Program<dyn AbstractDomain> =   
-            let result: HashMap<Label, Box<dyn Display>>;
-            (prog_int, result) = match config.domain {
+            println!("{:?}",config);
+            if let Domain::BoundedInterval = config.domain {
+                std::env::set_var("domain-lower-bound", config.domain_lower_bound.unwrap_or(ExtendedNum::NegInf).to_string());
+                std::env::set_var("domain-upper-bound", config.domain_upper_bound.unwrap_or(ExtendedNum::PosInf).to_string());
+            }
+
+            let (prog_int, result) = match config.domain {
                 config::Domain::Sign => analyze::<Sign>(ast.clone(), config),                
                 config::Domain::ExtendedSign => analyze::<ExtendedSign>(ast.clone(), config),
                 config::Domain::BoundedInterval => analyze::<BoundedInterval>(ast.clone(), config),
@@ -94,8 +101,6 @@ fn main() {
             for (i, l) in loop_labels.iter().enumerate() {
                 println!("(i{}) {}", i+1, result.get(l).unwrap())
             }
-
-            // println!("{}", map_to_str(&result));
 
             println!();
             println!("FINAL INVARIANT: {}", result.get(&prog_int.get_end_label()).unwrap());
@@ -120,6 +125,7 @@ fn analyze<D: AbstractDomain + 'static>(ast: Statement<Num>, config: AnalyzerCon
         config.init_state
             .map(|s|s.parse().unwrap())
             .unwrap_or(HashMapState::top()),
-        config.iteration_strategy));
+        config.iteration_strategy
+    ));
     (prog_int, result)
 }

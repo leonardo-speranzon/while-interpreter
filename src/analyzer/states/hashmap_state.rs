@@ -17,7 +17,7 @@ impl<D: AbstractDomain> AbstractState<D> for HashMapState<D>  {
         HashMapState(Some(State::new()))
     }    
     fn lub(self, other: Self) -> Self { 
-        // print!("LUB {:?} - {:?} -> ",self,other);
+        // print!("LUB {:?}, {:?} -> ",self,other);
         let new_s=  match (self, other) {
             (HashMapState(Some(mut s1)),HashMapState(Some(s2))) => { 
                 s1 = s1.into_iter().filter_map(|(k,v)|{

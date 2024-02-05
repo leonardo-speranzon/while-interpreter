@@ -14,17 +14,7 @@ pub trait AbstractDomain : Debug + Display + PartialOrd + Clone + Sized + From<N
         match op {
             Operator::Add => lhs.clone() + rhs.clone(),
             Operator::Sub => lhs.clone() - rhs.clone(),
-            //  {
-            //     let res = lhs.clone() - rhs.clone();
-            //     println!("({lhs}) - ({rhs}) -> ({res})");
-            //     res
-            // },
             Operator::Mul => lhs.clone() * rhs.clone(),
-            //  {
-            //     let res = lhs.clone() * rhs.clone();
-            //     println!("{lhs} * {rhs} = {res}");
-            //     res
-            // },
             Operator::Div => lhs.clone() / rhs.clone(),
         }
     }

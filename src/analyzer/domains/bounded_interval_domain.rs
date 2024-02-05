@@ -6,10 +6,12 @@ use crate::{analyzer::types::domain::AbstractDomain, types::ast::{Num, Operator}
 use super::extended_num::ExtendedNum;
 
 
-const LOWER: ExtendedNum = ExtendedNum::Num(-20);
-const UPPER: ExtendedNum = ExtendedNum::Num( 20);
-// const LOWER: ExtendedNum = ExtendedNum::NegInf;
-// const UPPER: ExtendedNum = ExtendedNum::PosInf;
+// static LOWER: ExtendedNum = ExtendedNum::Num(-20);
+// static UPPER: ExtendedNum = ExtendedNum::Num( 20);
+lazy_static! {
+    static ref BI_LOWER: ExtendedNum = std::env::var("domain-lower-bound").unwrap().parse().unwrap();
+    static ref BI_UPPER: ExtendedNum = std::env::var("domain-upper-bound").unwrap().parse().unwrap();
+}
 
 
 #[derive(Debug,PartialEq,Clone, Copy)]
@@ -24,13 +26,13 @@ impl BoundedInterval {
             return BoundedInterval::Range(lower, lower);
         }
 
-        lower =  if lower < LOWER {ExtendedNum::NegInf}
-            else if lower <= UPPER {lower}
-            else { UPPER };
-        upper =  if upper < LOWER { LOWER }
-            else if upper <= UPPER {upper}
+        lower =  if lower < *BI_LOWER {ExtendedNum::NegInf}
+            else if lower <= *BI_UPPER {lower}
+            else { *BI_UPPER };
+        upper =  if upper < *BI_LOWER { *BI_LOWER }
+            else if upper <= *BI_UPPER {upper}
             else { ExtendedNum::PosInf };
-            
+
         if lower == ExtendedNum::NegInf && upper == ExtendedNum::PosInf {
             BoundedInterval::Top
         } else if lower > upper {

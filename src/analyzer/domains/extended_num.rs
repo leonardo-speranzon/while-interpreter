@@ -23,6 +23,16 @@ impl FromStr for ExtendedNum {
         }
     }
 }
+impl Display for ExtendedNum {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ExtendedNum::PosInf => write!(f, "+inf"),
+            ExtendedNum::NegInf => write!(f, "-inf"),
+            ExtendedNum::Num(n) => write!(f, "{n}"),
+        }
+    }
+}
+
 
 impl PartialOrd for ExtendedNum {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
@@ -135,12 +145,12 @@ impl Div for ExtendedNum{
 }
 
 
-impl Display for ExtendedNum {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ExtendedNum::PosInf => write!(f, "+∞"),
-            ExtendedNum::NegInf => write!(f, "-∞"),
-            ExtendedNum::Num(n) => write!(f, "{n}"),
-        }
-    }
-}
+// impl Display for ExtendedNum {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             ExtendedNum::PosInf => write!(f, "+∞"),
+//             ExtendedNum::NegInf => write!(f, "-∞"),
+//             ExtendedNum::Num(n) => write!(f, "{n}"),
+//         }
+//     }
+// }
