@@ -16,7 +16,7 @@ impl<D: AbstractDomain> AbstractState<D> for HashMapState<D>  {
     fn top() -> Self{
         HashMapState(Some(State::new()))
     }    
-    fn lub(self, other: Self) -> Self { 
+    fn lub(self, other: &Self) -> Self { 
         // print!("LUB {:?}, {:?} -> ",self,other);
         let new_s=  match (self, other) {
             (HashMapState(Some(mut s1)),HashMapState(Some(s2))) => { 
@@ -28,7 +28,8 @@ impl<D: AbstractDomain> AbstractState<D> for HashMapState<D>  {
                 }).collect(); 
                 HashMapState(Some(s1))
             },
-            (HashMapState(Some(s)), _) | (_, HashMapState(Some(s))) => HashMapState(Some(s)),
+            (HashMapState(Some(s)), _) => HashMapState(Some(s)),
+            (_, HashMapState(Some(s))) => HashMapState(Some(s.clone())),
             (_, _) => HashMapState(None)
         };
         // println!("{:?}", new_s );

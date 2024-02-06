@@ -5,7 +5,7 @@ use crate::analyzer::types::analyzer::{IterationStrategy, StaticAnalyzer};
 use std::{collections::HashMap, marker::PhantomData};
 
 use crate::{types::ast::{Aexpr, Bexpr}, analyzer::printers::map_to_str};
-use crate::analyzer::tests as tests;
+use crate::analyzer::advanced_tests;
 pub struct GenericAnalyzer<D, B> {    
    domain: PhantomData<D>,
    abs_state: PhantomData<B>,
@@ -47,150 +47,7 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for GenericAnal
     }
 
     fn eval_bexpr(b: &Bexpr<D>, s: B)-> B {
-        match b{
-            Bexpr::True => s,
-            Bexpr::False => AbstractState::bottom(),
-            Bexpr::Equal(a1, a2) => {
-                match (*a1.clone(),*a2.clone()) {
-                    (Aexpr::Num(c), Aexpr::Var(x)) | (Aexpr::Var(x), Aexpr::Num(c)) =>
-                        tests::test_eq_case_1(s, x, c),
-                    (Aexpr::Num(c), ref post@Aexpr::PostInc(ref x)) | (ref post@Aexpr::PostInc(ref x), Aexpr::Num(c)) |
-                    (Aexpr::Num(c), ref post@Aexpr::PostDec(ref x)) | (ref post@Aexpr::PostDec(ref x), Aexpr::Num(c))=>{
-                        let s = tests::test_eq_case_1(s, x.clone(), c);
-                        let (_, s) = Self::eval_aexpr(post, s);
-                        return s;
-                    },
-                    (Aexpr::Num(c), ref pre@Aexpr::PreInc(ref x)) | (ref pre@Aexpr::PreInc(ref x), Aexpr::Num(c)) |
-                    (Aexpr::Num(c), ref pre@Aexpr::PreDec(ref x)) | (ref pre@Aexpr::PreDec(ref x), Aexpr::Num(c))=>{
-                        let (_, s) = Self::eval_aexpr(pre, s);
-                        let s = tests::test_eq_case_1(s, x.clone(), c);
-                        return s;
-                    },
-                    (Aexpr::Var(x), Aexpr::Var(y)) => 
-                        tests::test_eq_case_2(s, x, y, D::from(0)),
-                    (a1,a2) => {
-                        let (n1, s1) = Self::eval_aexpr(&a1, s);
-                        let (n2, s2) = Self::eval_aexpr(&a2, s1);
-                        let dom = n1.glb(&n2);
-                        if dom == D::bottom() {
-                            AbstractState::bottom()
-                        }else{
-                            s2   
-                        }
-                    }
-                }
-            },
-            Bexpr::LessEq(a1, a2) => {
-                match (*a1.clone(),*a2.clone()) {
-                    (Aexpr::Var(x), Aexpr::Num(c)) => 
-                        tests::test_lte_case_1(s, x, c),
-                    (Aexpr::Num(c), Aexpr::Var(x)) => 
-                        tests::test_gte_case_1(s, x, c),
-                    (ref post@Aexpr::PostInc(ref x), Aexpr::Num(c)) |(ref post@Aexpr::PostDec(ref x), Aexpr::Num(c)) => {
-                        let s = tests::test_lte_case_1(s, x.clone(), c);
-                        let (_, s) = Self::eval_aexpr(post, s);
-                        return s;                     
-                    }
-                    (Aexpr::Num(c), ref post@Aexpr::PostDec(ref x)) | (Aexpr::Num(c), ref post@Aexpr::PostInc(ref x)) =>{
-                        let s = tests::test_gte_case_1(s, x.clone(), c);
-                        let (_, s) = Self::eval_aexpr(post, s);
-                        return s;
-                    },
-                    (ref pre@Aexpr::PreInc(ref x), Aexpr::Num(c)) | (ref pre@Aexpr::PreDec(ref x), Aexpr::Num(c)) => {
-                        let (_, s) = Self::eval_aexpr(pre, s);
-                        let s = tests::test_lte_case_1(s, x.clone(), c);
-                        return s;
-                    }
-                    (Aexpr::Num(c), ref pre@Aexpr::PreDec(ref x)) | (Aexpr::Num(c), ref pre@Aexpr::PreInc(ref x))=>{
-                        let (_, s) = Self::eval_aexpr(pre, s);
-                        let s = tests::test_gte_case_1(s, x.clone(), c);
-                        return s;
-                    },
-
-                    (Aexpr::Var(x), Aexpr::Var(y)) =>
-                        tests::test_lte_case_2(s, x, y),
-                    (_, _) => {
-                        let (_, s1) = Self::eval_aexpr(&a1, s);
-                        let (_, s2) = Self::eval_aexpr(&a2, s1);
-                        s2
-                    }
-                }                
-                
-            },
-            Bexpr::And(_, _) => todo!(),
-
-            
-            Bexpr::Not(b) => {
-                match *b.clone() { 
-                    Bexpr::True => AbstractState::bottom(),
-                    Bexpr::False => s,
-                    Bexpr::Equal(a1, a2) => {
-                        match (*a1.clone(),*a2.clone()) {
-                            (Aexpr::Num(c), Aexpr::Var(x)) | (Aexpr::Var(x), Aexpr::Num(c)) => 
-                                tests::test_neq_case_1(s, x, c),
-                            (Aexpr::Num(c), ref post@Aexpr::PostInc(ref x)) | (ref post@Aexpr::PostInc(ref x), Aexpr::Num(c)) |
-                            (Aexpr::Num(c), ref post@Aexpr::PostDec(ref x)) | (ref post@Aexpr::PostDec(ref x), Aexpr::Num(c))=>{
-                                let s = tests::test_neq_case_1(s, x.clone(), c);
-                                let (_, s) = Self::eval_aexpr(post, s);
-                                return s;
-                            },
-                            (Aexpr::Num(c), ref pre@Aexpr::PreInc(ref x)) | (ref pre@Aexpr::PreInc(ref x), Aexpr::Num(c)) |
-                            (Aexpr::Num(c), ref pre@Aexpr::PreDec(ref x)) | (ref pre@Aexpr::PreDec(ref x), Aexpr::Num(c))=>{
-                                let (_, s) = Self::eval_aexpr(pre, s);
-                                let s = tests::test_neq_case_1(s, x.clone(), c);
-                                return s;
-                            },
-                            // (Aexpr::Var(x), Aexpr::Var(y)) => 
-                            //     tests::test_gt_case_2(s, x, y),
-                            (_, _) => {
-                                // Since n1 and n2 are over approximations we can't know 
-                                let (_, s1) = Self::eval_aexpr(&a1, s);
-                                let (_, s2) = Self::eval_aexpr(&a2, s1);
-                                s2
-                            }
-                        } 
-                    },
-                    Bexpr::LessEq(a1, a2) => {
-                        match (*a1.clone(),*a2.clone()) {
-                            (Aexpr::Var(x), Aexpr::Num(c)) => 
-                                tests::test_gt_case_1(s, x, c),
-                            (Aexpr::Num(c), Aexpr::Var(x)) => 
-                                tests::test_lt_case_1(s, x, c),
-                            (ref post@Aexpr::PostInc(ref x), Aexpr::Num(c)) |(ref post@Aexpr::PostDec(ref x), Aexpr::Num(c)) => {
-                                let s = tests::test_gt_case_1(s, x.clone(), c);
-                                let (_, s) = Self::eval_aexpr(post, s);
-                                return s;                     
-                            }
-                            (Aexpr::Num(c), ref post@Aexpr::PostDec(ref x)) | (Aexpr::Num(c), ref post@Aexpr::PostInc(ref x)) =>{
-                                let s = tests::test_lt_case_1(s, x.clone(), c);
-                                let (_, s) = Self::eval_aexpr(post, s);
-                                return s;
-                            },
-                            (ref pre@Aexpr::PreInc(ref x), Aexpr::Num(c)) | (ref pre@Aexpr::PreDec(ref x), Aexpr::Num(c)) => {
-                                let (_, s) = Self::eval_aexpr(pre, s);
-                                let s = tests::test_gt_case_1(s, x.clone(), c);
-                                return s;
-                            }
-                            (Aexpr::Num(c), ref pre@Aexpr::PreDec(ref x)) | (Aexpr::Num(c), ref pre@Aexpr::PreInc(ref x))=>{
-                                let (_, s) = Self::eval_aexpr(pre, s);
-                                let s = tests::test_lt_case_1(s, x.clone(), c);
-                                return s;
-                            },
-                            
-                            (Aexpr::Var(x), Aexpr::Var(y)) => 
-                                tests::test_gt_case_2(s, x, y),
-                            (_, _) => {
-                                let (_, s1) = Self::eval_aexpr(&a1, s);
-                                let (_, s2) = Self::eval_aexpr(&a2, s1);
-                                s2
-                            }
-                        } 
-                    },
-                    Bexpr::Not(b) => Self::eval_bexpr(&b, s),
-                    Bexpr::And(_, _) => todo!(),
-                }
-            },
-        }
+        advanced_tests::eval_bexpr(b, s)
     }
 
     fn analyze(prog: Program<D>, init_state: B, iteration_strategy: IterationStrategy) -> HashMap<Label, B> {
@@ -252,7 +109,7 @@ impl<D: AbstractDomain, B: AbstractState<D>> GenericAnalyzer<D,B>{
             };
             for (l,cmd,_) in arcs {
                 match  states.get(l) {
-                    Some(s) => new_state = new_state.lub(Self::apply_cmd(cmd, s)),
+                    Some(s) => new_state = new_state.lub(&Self::apply_cmd(cmd, s)),
                     None => panic!("Missing AbsState for label {l}"),
                 };
             }

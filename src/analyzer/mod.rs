@@ -22,5 +22,6 @@ pub mod states {
 pub mod abstract_translator;
 pub mod printers;
 pub mod tests;
+pub mod advanced_tests;
 
 
