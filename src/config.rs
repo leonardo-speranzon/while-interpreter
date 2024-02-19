@@ -128,7 +128,7 @@ impl Config {
                     domain_upper_bound: sub_m.get_one::<(ExtendedNum,ExtendedNum)>("bounds").map(|(_,u)|*u),
                 }
             },
-            _ => todo!(),
+            _ => unreachable!(),
         }
     }
 

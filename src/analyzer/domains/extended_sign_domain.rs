@@ -50,7 +50,7 @@ impl FromStr for ExtendedSign{
             "0+" => Ok(Self{positive:true, zero:true, negative:false}),
             "-0" => Ok(Self{positive:false, zero:true, negative:true}),
             "-+" => Ok(Self{positive:true, zero:false, negative:true}),
-            _ => Err(todo!())
+            _ => Err(format!("Unexpected string representing ExtendedSing domain: {s}"))
         }
     }
 }

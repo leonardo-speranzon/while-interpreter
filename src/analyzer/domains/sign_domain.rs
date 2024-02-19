@@ -39,7 +39,7 @@ impl FromStr for Sign{
             "-" => Ok(Self::Negative),
             "0" => Ok(Self::Zero),
             "+" => Ok(Self::Positive),
-            _ => Err(todo!())
+            _ => Err(format!("Unexpected string representing Sign domain: {s}"))
         }
     }
 }

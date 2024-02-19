@@ -7,7 +7,6 @@ pub mod domains{
     pub mod extended_sign_domain;
 }
 pub mod analyzers {
-    pub mod interval_analyzer;
     pub mod generic_analyzer;
 }
 pub mod types {
