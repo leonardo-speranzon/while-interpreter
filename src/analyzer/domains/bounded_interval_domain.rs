@@ -1,18 +1,14 @@
-use std::{cmp::{max, min,}, fmt::Display, ops::{Add, Div, Mul, Sub}, str::FromStr};
+use std::{ cmp::{max, min,}, fmt::Display, ops::{Add, Div, Mul, Sub}, str::FromStr};
 use iter_tools::Itertools;
+use once_cell::sync::OnceCell;
 
 use crate::{analyzer::types::domain::AbstractDomain, types::ast::{Num, Operator}};
 
 use super::extended_num::ExtendedNum;
 
 
-// static LOWER: ExtendedNum = ExtendedNum::Num(-20);
-// static UPPER: ExtendedNum = ExtendedNum::Num( 20);
-lazy_static! {
-    static ref BI_LOWER: ExtendedNum = std::env::var("domain-lower-bound").unwrap().parse().unwrap();
-    static ref BI_UPPER: ExtendedNum = std::env::var("domain-upper-bound").unwrap().parse().unwrap();
-}
-
+static BI_LOWER: OnceCell<ExtendedNum> = OnceCell::new();
+static BI_UPPER: OnceCell<ExtendedNum> = OnceCell::new();
 
 #[derive(Debug,PartialEq,Clone, Copy)]
 pub enum BoundedInterval{
@@ -22,23 +18,28 @@ pub enum BoundedInterval{
 }
 impl BoundedInterval {
     fn new(mut lower: ExtendedNum, mut upper: ExtendedNum) -> Self{
-        if lower == upper && lower != ExtendedNum::NegInf && lower != ExtendedNum::PosInf{
-            return BoundedInterval::Range(lower, lower);
-        }
+        match (BI_LOWER.get(), BI_UPPER.get()){
+            (Some(lower_bound), Some(upper_bound)) => {       
+                if lower == upper && lower != ExtendedNum::NegInf && lower != ExtendedNum::PosInf{
+                    return BoundedInterval::Range(lower, lower);
+                }
 
-        lower =  if lower < *BI_LOWER {ExtendedNum::NegInf}
-            else if lower <= *BI_UPPER {lower}
-            else { *BI_UPPER };
-        upper =  if upper < *BI_LOWER { *BI_LOWER }
-            else if upper <= *BI_UPPER {upper}
-            else { ExtendedNum::PosInf };
+                lower =  if lower < *lower_bound {ExtendedNum::NegInf}
+                    else if lower <= *upper_bound {lower}
+                    else { *upper_bound };
+                upper =  if upper < *lower_bound { *lower_bound }
+                    else if upper <= *upper_bound {upper}
+                    else { ExtendedNum::PosInf };
 
-        if lower == ExtendedNum::NegInf && upper == ExtendedNum::PosInf {
-            BoundedInterval::Top
-        } else if lower > upper {
-            BoundedInterval::Bottom
-        } else {
-            BoundedInterval::Range(lower, upper)
+                if lower == ExtendedNum::NegInf && upper == ExtendedNum::PosInf {
+                    BoundedInterval::Top
+                } else if lower > upper {
+                    BoundedInterval::Bottom
+                } else {
+                    BoundedInterval::Range(lower, upper)
+                }
+            },
+            _ => panic!("Missing configuration for BoundedInterval Domain")
         }
     }
 }
@@ -88,6 +89,41 @@ impl FromStr for BoundedInterval{
 }
 
 impl AbstractDomain for BoundedInterval{
+    fn set_config(config_string: Option<String>) -> Result<(), String>{
+        match config_string {
+            Some(conf) => {
+                let mut chars = conf.chars();
+                match chars.next() {
+                    Some('[') => (),
+                    _ => return Err(format!("Expected \"[l,u]\", found {conf}")),
+                }
+                let lower: String = chars.take_while_ref(|c|c!=&',').collect();
+                
+                match chars.next() {
+                    Some(',') => (),
+                    _ => return Err(format!("Expected \"[l,u]\", found {conf}")),
+                }
+                match chars.next_back() {
+                    Some(']') => (),
+                    _ => return Err(format!("Expected \"[l,u]\", found {conf}")),
+                }
+        
+                let upper: String = chars.collect();
+        
+                let lower = lower.parse()?;
+                let upper = upper.parse()?;
+                BI_LOWER.get_or_init(|| lower);
+                BI_UPPER.get_or_init(|| upper);
+            },
+            None => {
+                BI_LOWER.get_or_init(|| ExtendedNum::NegInf);
+                BI_UPPER.get_or_init(|| ExtendedNum::PosInf);
+            },
+        };
+        return Ok(());
+    }
+
+
     fn bottom() -> Self { BoundedInterval::Bottom }
     fn top() -> Self { BoundedInterval::Top }
 

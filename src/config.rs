@@ -44,10 +44,9 @@ impl ValueEnum for Domain {
 #[derive(Debug)]
 pub struct AnalyzerConfiguration{
     pub domain: Domain,
+    pub domain_config: Option<String>,
     pub iteration_strategy: IterationStrategy,
     pub init_state: Option<String>,
-    pub domain_lower_bound: Option<ExtendedNum>,
-    pub domain_upper_bound: Option<ExtendedNum>,
 }
 
 #[derive(Debug)]
@@ -90,15 +89,13 @@ impl Config {
                 // .if
                 // .value_parser(parse_abs_state::<BoundedInterval>)
             )
-            // .arg(Arg::new("lower-bound").short('l').help("Set a lower bound for the domain").value_parser(str::parse::<ExtendedNum>).allow_hyphen_values(true))
-            // .arg(Arg::new("upper-bound").short('u').help("Set an upper bound for the domain").value_parser(str::parse::<ExtendedNum>).allow_hyphen_values(true))
-            .arg(Arg::new("bounds").short('b').help("Set bounds for the domain").value_parser(parse_bounds))
+            .arg(Arg::new("config").long("conf").help("Set the configuration for the domain"))
             .args(parser_args)
             .arg_required_else_help(true);
             // .arg(Arg::new("lower").long("lower-bound").short('l').help("Lower bound").value_parser(clap::value_parser!(Num)).action(ArgAction::Set).required(true))
 
             
-        let matches = Command::new("While Interprer")
+        let matches = Command::new("While Interpreter")
             .subcommand(interpreter_cmd)
             .subcommand(analyzer_cmd)
             .subcommand_required(true)
@@ -116,16 +113,14 @@ impl Config {
                 parser_configuration: ParserConfig::from(sub_m),
                 config: AnalyzerConfiguration{
                     domain: sub_m.get_one::<Domain>("domain").cloned().unwrap_or(Domain::BoundedInterval),
+                    domain_config: sub_m.get_one::<String>("config").cloned(),
                     iteration_strategy: match (sub_m.get_flag("widening"), sub_m.get_flag("narrowing")) {
                         (false, _) => IterationStrategy::Simple,
                         (true, false) => IterationStrategy::Widening,
                         (true, true) => IterationStrategy::WideningAndNarrowing,
                     },
                     init_state: sub_m.get_one::<String>("state").cloned(), //sub_m.get_one::<HashMapState<BoundedInterval>>("state").cloned(),
-                    // domain_lower_bound: sub_m.get_one::<ExtendedNum>("lower-bound").cloned(),
-                    // domain_upper_bound: sub_m.get_one::<ExtendedNum>("upper-bound").cloned(),
-                    domain_lower_bound: sub_m.get_one::<(ExtendedNum,ExtendedNum)>("bounds").map(|(l,_)|*l),
-                    domain_upper_bound: sub_m.get_one::<(ExtendedNum,ExtendedNum)>("bounds").map(|(_,u)|*u),
+
                 }
             },
             _ => unreachable!(),

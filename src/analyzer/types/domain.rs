@@ -5,6 +5,14 @@ use crate::types::ast::{Num, Operator};
 
 pub trait AbstractDomain : Debug + Display + PartialOrd + Clone + Sized + From<Num> + FromStr
                            + Add<Output=Self> + Sub<Output=Self> + Mul<Output=Self> + Div<Output=Self>  {
+
+    fn set_config(config_string: Option<String>) -> Result<(), String> {
+        match config_string {
+            None => Err(String::from("This domain does not support configuration")),
+            Some(_) => Ok(())
+        }
+    }
+    
     fn bottom() -> Self;
     fn top() -> Self;
     fn lub(&self, other: &Self) -> Self;

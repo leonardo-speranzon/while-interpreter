@@ -5,10 +5,8 @@ use interpreter::{types::State, interpreter::eval_statement};
 use parser::{ parse_string, parse_file};
 use types::{ast::{Num, Statement}, errors::{ParserError, RuntimeError}};
 
-use crate::{analyzer::{domains::{ extended_num::ExtendedNum}, printers::print_stm_with_inv}, config::Domain};
+use crate::analyzer::printers::print_stm_with_inv;
 
-#[macro_use]
-extern crate lazy_static;
 
 mod types;
 mod interpreter;
@@ -79,10 +77,6 @@ fn main() {
         },
         Config::AnalyzerConfiguration { config, .. } => {  
             println!("{:?}",config);
-            if let Domain::BoundedInterval = config.domain {
-                std::env::set_var("domain-lower-bound", config.domain_lower_bound.unwrap_or(ExtendedNum::NegInf).to_string());
-                std::env::set_var("domain-upper-bound", config.domain_upper_bound.unwrap_or(ExtendedNum::PosInf).to_string());
-            }
 
             let (prog_int, result) = match config.domain {
                 config::Domain::Sign => analyze::<Sign>(ast.clone(), config),                
@@ -118,6 +112,10 @@ fn to_boxed_state<D:Display + 'static>(r: HashMap<Label,D>)->HashMap<Label, Box<
 }
 
 fn analyze<D: AbstractDomain + 'static>(ast: Statement<Num>, config: AnalyzerConfiguration) -> (Box<dyn ProgramInterface>, HashMap<Label, Box<dyn Display>>){
+    if let Err(e) = D::set_config(config.domain_config) {
+        panic!("Failed configuration :{e}")
+    }
+
     let prog: Program<D> = GenericAnalyzer::<_, HashMapState<_>>::init(ast);
     let prog_int= Box::new(prog.clone()) as Box<dyn ProgramInterface>;
     let result = to_boxed_state(GenericAnalyzer::analyze(
