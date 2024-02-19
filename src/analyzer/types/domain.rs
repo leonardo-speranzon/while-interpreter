@@ -31,8 +31,8 @@ pub trait AbstractDomain : Debug + Display + PartialOrd + Clone + Sized + From<N
     fn widening(self, other:Self) -> Self {
         self.lub(&other) //Trivial widening (possible infinite ascending chain)
     }
-    fn narrowing(self, other:Self) -> Self {
-        self //Trivial narrowing
+    fn narrowing(self, _other:Self) -> Self {
+        self //Trivial narrowing (no narrowing)
     }
 
     fn all_gte(lb: &Self) -> Self;

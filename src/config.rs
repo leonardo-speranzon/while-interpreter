@@ -1,9 +1,8 @@
 use std::str::FromStr;
 
 use clap::{builder::{EnumValueParser, PossibleValue}, Arg, ArgAction, ArgMatches, Command, ValueEnum};
-use iter_tools::Itertools;
 
-use crate::{analyzer::{domains::extended_num::ExtendedNum, types::analyzer::IterationStrategy}, interpreter::types::State, types::ast::Num};
+use crate::{analyzer::types::analyzer::IterationStrategy, interpreter::types::State, types::ast::Num};
 
 
 #[derive(Debug)]
@@ -163,30 +162,3 @@ fn parse_state<T : FromStr>(str_state: &str) -> Result<State<T>, String> {
             }
         }).collect::<Result<_,_>>()
 }    
-
-fn parse_bounds(s: &str) -> Result<(ExtendedNum, ExtendedNum), String> {
-    if let Ok(n) = s.parse::<Num>(){
-        return Ok((ExtendedNum::Num(n),ExtendedNum::Num(n)));
-    };
-    let mut chars = s.chars();
-    match chars.next() {
-        Some('[') => (),
-        _ => return Err(format!("Expected \"[l,u]\", found {s}")),
-    }
-    let lower: String = chars.take_while_ref(|c|c!=&',').collect();
-    
-    match chars.next() {
-        Some(',') => (),
-        _ => return Err(format!("Expected \"[l,u]\", found {s}")),
-    }
-    match chars.next_back() {
-        Some(']') => (),
-        _ => return Err(format!("Expected \"[l,u]\", found {s}")),
-    }
-
-    let upper: String = chars.collect();
-
-    let lower = lower.parse()?;
-    let upper = upper.parse()?;
-    Ok((lower,upper))
-}

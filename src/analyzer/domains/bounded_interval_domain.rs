@@ -1,4 +1,4 @@
-use std::{ cmp::{max, min,}, fmt::Display, ops::{Add, Div, Mul, Sub}, str::FromStr};
+use std::{ cmp::{max, min, Ordering,}, fmt::Display, ops::{Add, Div, Mul, Sub}, str::FromStr};
 use iter_tools::Itertools;
 use once_cell::sync::OnceCell;
 
@@ -46,8 +46,18 @@ impl BoundedInterval {
 
 
 impl PartialOrd for BoundedInterval{
-    fn partial_cmp(&self, _other: &Self) -> Option<std::cmp::Ordering> {
-        todo!()
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match (self, other) {
+            (BoundedInterval::Bottom, BoundedInterval::Bottom) | (BoundedInterval::Top, BoundedInterval::Top) => Some(Ordering::Equal),
+            (BoundedInterval::Top, _) | (_, BoundedInterval::Bottom) => Some(Ordering::Greater),
+            (BoundedInterval::Bottom, _) | (_, BoundedInterval::Top) => Some(Ordering::Less),
+            (BoundedInterval::Range(a, b), BoundedInterval::Range(c, d)) => {
+                if a==c && b==d { Some(Ordering::Equal) }
+                else if a<=c && b>=d { Some(Ordering::Greater)}
+                else if a>=c && b<=d { Some(Ordering::Less)}
+                else { None }
+            },
+        }
     }
 }
 

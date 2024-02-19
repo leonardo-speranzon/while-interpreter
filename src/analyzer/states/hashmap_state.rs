@@ -1,4 +1,4 @@
-use std::{fmt::Display, str::FromStr};
+use std::{cmp::Ordering, collections::HashSet, fmt::Display, str::FromStr};
 
 use iter_tools::Itertools;
 
@@ -111,8 +111,29 @@ impl<D: AbstractDomain> AbstractState<D> for HashMapState<D>  {
 }
 
 impl<D: AbstractDomain> PartialOrd for HashMapState<D> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        todo!()
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match (&self.0, &other.0) {
+            (None, None) => Some(Ordering::Equal),
+            (None, Some(_)) => Some(Ordering::Less),
+            (Some(_), None) => Some(Ordering::Greater),
+            (Some(s1), Some(s2)) => {
+                let mut ord_candidate: Option<Ordering> = None;
+                let all_keys = s1.keys().chain(s2.keys()).collect::<HashSet<_>>();
+                for k in all_keys {
+                    let top = D::top();
+                    let v1 = s1.get(k).unwrap_or(&top);
+                    let v2 = s2.get(k).unwrap_or(&top);
+
+                    match (v1.partial_cmp(v2), ord_candidate) {
+                        (None, _) => return None,
+                        (Some(ord), None) => { ord_candidate=Some(ord); },
+                        (Some(ord), Some(c_ord)) if ord == c_ord => (),
+                        (Some(_), Some(_)) => return None,
+                    }
+                }
+                return ord_candidate;
+            },
+        }
     }
 }
 

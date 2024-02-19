@@ -1,4 +1,4 @@
-use std::{fmt::Display, ops::{Add, Div, Mul, Sub}, str::FromStr};
+use std::{cmp::Ordering, fmt::Display, ops::{Add, Div, Mul, Sub}, str::FromStr};
 use crate::types::ast::{Operator, Num};
 use crate::analyzer::types::domain::AbstractDomain;
 
@@ -17,8 +17,15 @@ impl Display for Sign{
     }
 }
 impl PartialOrd for Sign{
-    fn partial_cmp(&self, _other: &Self) -> Option<std::cmp::Ordering> {
-        todo!()
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match (self, other) {
+            (s1, s2) if s1 == s2 => Some(Ordering::Equal),
+
+            (Sign::Top, _) | (_, Sign::Bottom)  => Some(Ordering::Greater),
+            (Sign::Bottom, _) | (_, Sign::Top)  => Some(Ordering::Less),
+            
+            _ => None
+        }
     }
 }
 

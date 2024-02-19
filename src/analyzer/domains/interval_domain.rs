@@ -1,4 +1,6 @@
-use std::{cmp::{min, max}, fmt::Display, ops::{Add, Div, Mul, Sub}, str::FromStr};
+use std::{cmp::{max, min, Ordering}, fmt::Display, ops::{Add, Div, Mul, Sub}, str::FromStr};
+use iter_tools::Itertools as _;
+
 use crate::types::ast::{Num, Operator};
 use crate::analyzer::types::domain::AbstractDomain;
 use super::extended_num::ExtendedNum;
@@ -33,8 +35,18 @@ impl Display for Interval{
     }
 }
 impl PartialOrd for Interval{
-    fn partial_cmp(&self, _other: &Self) -> Option<std::cmp::Ordering> {
-        todo!()
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match (self, other) {
+            (Interval::Bottom, Interval::Bottom) | (Interval::Top, Interval::Top) => Some(Ordering::Equal),
+            (Interval::Top, _) | (_, Interval::Bottom) => Some(Ordering::Greater),
+            (Interval::Bottom, _) | (_, Interval::Top) => Some(Ordering::Less),
+            (Interval::Range(a, b), Interval::Range(c, d)) => {
+                if a==c && b==d { Some(Ordering::Equal) }
+                else if a<=c && b>=d { Some(Ordering::Greater)}
+                else if a>=c && b<=d { Some(Ordering::Less)}
+                else { None }
+            },
+        }
     }
 }
 
@@ -46,8 +58,32 @@ impl From<Num> for Interval{
 impl FromStr for Interval{
     type Err = String;
 
+    // "[1,10]", "[-inf,10]", "[-inf,inf]"
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        todo!()
+        if let Ok(n) = s.parse::<Num>(){
+            return Ok(Self::new(ExtendedNum::Num(n),ExtendedNum::Num(n)));
+        };
+        let mut chars = s.chars();
+        match chars.next() {
+            Some('[') => (),
+            _ => return Err(format!("Expected \"[l,u]\", found {s}")),
+        }
+        let lower: String = chars.take_while_ref(|c|c!=&',').collect();
+        
+        match chars.next() {
+            Some(',') => (),
+            _ => return Err(format!("Expected \"[l,u]\", found {s}")),
+        }
+        match chars.next_back() {
+            Some(']') => (),
+            _ => return Err(format!("Expected \"[l,u]\", found {s}")),
+        }
+
+        let upper: String = chars.collect();
+
+        let lower = lower.parse()?;
+        let upper = upper.parse()?;
+        Ok(Self::new(lower,upper))
     }
 }
 
@@ -79,13 +115,13 @@ impl AbstractDomain for Interval{
         }
     }
 
-    fn backward_abstract_operator(op: &Operator, lhs: &Self, rhs: &Self, res: &Self) -> (Self, Self) {
+    fn backward_abstract_operator(_op: &Operator, _lhs: &Self, _rhs: &Self, _res: &Self) -> (Self, Self) {
         todo!()
     }
 
     fn all_gte(lb: &Self) -> Self {
         match lb {
-            Interval::Range(a, b) => Interval::new(*a, ExtendedNum::PosInf),
+            Interval::Range(a, _) => Interval::new(*a, ExtendedNum::PosInf),
             Interval::Top => Interval::Top,
             Interval::Bottom =>  Interval::Bottom ,
         }
@@ -94,7 +130,7 @@ impl AbstractDomain for Interval{
 
     fn all_lte(ub: &Self) -> Self {
         match ub {
-            Interval::Range(a, b) => Interval::new(ExtendedNum::NegInf, *b),
+            Interval::Range(_, b) => Interval::new(ExtendedNum::NegInf, *b),
             Interval::Top => Interval::Top,
             Interval::Bottom =>  Interval::Bottom ,
         }

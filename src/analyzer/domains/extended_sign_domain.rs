@@ -1,4 +1,4 @@
-use std::{fmt::Display, ops::{Add, Div, Mul, Sub}, str::FromStr};
+use std::{cmp::Ordering, fmt::Display, ops::{Add, Div, Mul, Sub}, str::FromStr};
 
 use crate::types::ast::{Num, Operator};
 use crate::analyzer::types::domain::AbstractDomain;
@@ -25,9 +25,19 @@ impl Display for ExtendedSign{
     }
 }
 impl PartialOrd for ExtendedSign{
-    fn partial_cmp(&self, _other: &Self) -> Option<std::cmp::Ordering> {
-        todo!()
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if self == other { Some(Ordering::Equal) }
+        else if imply(other.positive, self.positive) && imply(other.zero, self.zero) && imply(other.negative, self.negative){
+            Some(Ordering::Greater)
+        } else if imply(self.positive, other.positive) && imply(self.zero, other.zero) && imply(self.negative, other.negative) {
+            Some(Ordering::Less)
+        }else {
+            None
+        }
     }
+}
+fn imply(b1: bool, b2: bool) -> bool{
+    !b1 || b2 
 }
 
 impl From<Num> for ExtendedSign{
