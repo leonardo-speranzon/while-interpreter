@@ -54,36 +54,35 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for GenericAnal
         let mut all_state: HashMap<Label, B> = HashMap::new();
 
 
-        for i in 0..=(prog.labels_num-1) {
+        for i in 0..prog.labels_num {
             all_state.insert(i, AbstractState::bottom());
         }
-        all_state.insert(prog.entry, init_state);
 
 
         let mut iteration_num= 1;
         println!("\nINITIAL STATES:\n{}\n", map_to_str(&all_state));
 
         if let IterationStrategy::Simple = iteration_strategy {            
-            let mut new_all_state = Self::make_iteration(&prog, all_state.clone(), StepType::NormalStep);
+            let mut new_all_state = Self::make_iteration(&prog, &init_state, all_state.clone(), StepType::NormalStep);
             while new_all_state != all_state {
                 all_state = new_all_state;
                 println!("ITERATION {}:\n{:?}\n",iteration_num, map_to_str(&all_state)); iteration_num+=1;
-                new_all_state = Self::make_iteration(&prog, all_state.clone(), StepType::NormalStep); 
+                new_all_state = Self::make_iteration(&prog,&init_state,  all_state.clone(), StepType::NormalStep); 
             }
         }else {
-            let mut new_all_state = Self::make_iteration(&prog, all_state.clone(), StepType::WideningStep);
+            let mut new_all_state = Self::make_iteration(&prog,&init_state,  all_state.clone(), StepType::WideningStep);
             while new_all_state != all_state {
                 all_state = new_all_state;
                 println!("ITERATION (∇) {}:\n{:?}\n",iteration_num, map_to_str(&all_state)); iteration_num+=1;
-                new_all_state = Self::make_iteration(&prog, all_state.clone(), StepType::WideningStep); 
+                new_all_state = Self::make_iteration(&prog,&init_state,  all_state.clone(), StepType::WideningStep); 
             }
-    
+
             if let IterationStrategy::WideningAndNarrowing = iteration_strategy {      
-                let mut new_all_state = Self::make_iteration(&prog, all_state.clone(), StepType::NarrowingStep);
+                let mut new_all_state = Self::make_iteration(&prog,&init_state,  all_state.clone(), StepType::NarrowingStep);                
                 while new_all_state != all_state {
                     all_state = new_all_state;
                     println!("ITERATION (Δ) {}:\n{:?}\n",iteration_num, map_to_str(&all_state)); iteration_num+=1;
-                    new_all_state = Self::make_iteration(&prog, all_state.clone(), StepType::NarrowingStep); 
+                    new_all_state = Self::make_iteration(&prog, &init_state, all_state.clone(), StepType::NarrowingStep); 
                 }
             }   
         }
@@ -98,12 +97,12 @@ enum StepType {
 }
 
 impl<D: AbstractDomain, B: AbstractState<D>> GenericAnalyzer<D,B>{
-    fn make_iteration(prog: &Program<D>, states: HashMap<Label, B>, step_type: StepType) -> HashMap<Label, B>{
+    fn make_iteration(prog: &Program<D>, init_state: &B, states: HashMap<Label, B>, step_type: StepType) -> HashMap<Label, B>{
         let mut all_states: HashMap<Label, B> = HashMap::new();
         for i in 0..=(prog.labels_num-1) {
             let arcs = prog.get_entering_arcs(i);
             let mut new_state = if i == prog.entry{
-                states.get(&i).unwrap().clone()
+                init_state.clone()
             }else{
                 B::bottom()
             };
