@@ -94,7 +94,7 @@ $$
         ((F^{k}\bot) \circ S[\![stm]\!]) s & \text{if $B[\![b]\!]s = tt$}\\
         id\ s & \text{if $B[\![b]\!]s = ff$}\\
     \end{cases} \\
-    & = (F^{k}\bot) \circ S[\![stm]\!]) s & \text{(by lemma1)}\\
+    & = (F^{k}\bot) \circ S[\![stm]\!] s & \text{(by lemma1)}\\
     & = undef & \text{(by implication hypothesis)}
 \end{aligned}
 $$

@@ -1,0 +1,82 @@
+\documentclass{article}
+    % % General document formatting
+    \usepackage[margin=1in]{geometry}
+    
+    % % Related to math
+    \usepackage{amsmath,amssymb,amsfonts,amsthm}
+    
+    \newcommand{\lf}{\text{f}\text{f}}
+    \newcommand{\lt}{\text{t}\text{t}}
+
+\begin{document}
+
+To introduce the increment and decrement expression in the While language it should be possible to update the State while evaluating expression,
+and so we should change from $\mathcal{A}$ to $\mathcal{A}'$:
+$$ 
+    \begin{aligned}
+        \mathcal{A} &= Aexpr \rightarrow State \rightarrow N \\
+        \mathcal{A}'&= Aexpr \rightarrow State \rightarrow \langle State, N\rangle
+    \end{aligned}
+$$
+
+And its definition will be:
+$$ 
+    \begin{aligned}
+        \mathcal{A}'[n]s &= \langle s, \mathcal{N}[n]\rangle \\
+        \mathcal{A}'[x]s &= \langle s, s\,x \rangle \\
+        \mathcal{A}'[x\texttt{++}]s &= \langle s[x\rightarrowtail s\, x +1 ], s\,x \rangle \\
+        \mathcal{A}'[\texttt{++}x]s &= \langle s[x\rightarrowtail s\, x +1 ], s\,x +1 \rangle \\
+        \mathcal{A}'[x\texttt{--}]s &= \langle s[x\rightarrowtail s\, x -1 ], s\,x \rangle \\
+        \mathcal{A}'[\texttt{--}x]s &= \langle s[x\rightarrowtail s\, x -1 ], s\,x -1\rangle \\
+    \end{aligned}
+$$
+$$
+\frac
+    {\mathcal{A}'[a_1]s = \langle s', n_1\rangle \quad\quad \mathcal{A}'[a_1]s' = \langle s'', n_2\rangle}
+    {\mathcal{A}'[a_1 \star a_2]s = \langle s'', n_1 \star n_2\rangle}
+$$
+
+\vspace{1em}
+\hrule
+\vspace{2em}
+
+The same changes affect the boolean expression evaluation:
+$$ 
+    \begin{aligned}
+        \mathcal{B} &= Bexpr \rightarrow State \rightarrow T \\
+        \mathcal{B}'&= Bexpr \rightarrow State \rightarrow \langle State, T\rangle
+    \end{aligned}
+$$
+
+And its definition will be:
+$$ 
+    \begin{aligned}
+        \mathcal{B}'[true]s  &= \langle s, \lt\rangle \\
+        \mathcal{B}'[false]s &= \langle s, \lf \rangle \\
+    \end{aligned}
+$$
+$$
+\begin{aligned}
+    \texttt{(cmp)} \quad & \frac
+        {\mathcal{A}'[a_1]s = \langle s', n_1\rangle \quad\quad \mathcal{A}'[a_1]s' = \langle s'', n_2\rangle}
+        {\mathcal{B}'[b_1 \sim t_2]s = \langle s'', n_1 \sim n_2 \rangle} \\
+    \texttt{(not-\lt)} \quad & \frac
+        {\mathcal{B}'[b]s = \langle s', \lf\rangle}
+        {\mathcal{B}'[\lnot b]s = \langle s', \lt \rangle} \\
+    \texttt{(not-\lf)} \quad & \frac
+        {\mathcal{B}'[b]s = \langle s', \lt\rangle}
+        {\mathcal{B}'[\lnot b]s = \langle s', \lf \rangle} \\
+    \texttt{(and-1)} \quad & \frac
+        {\mathcal{B}'[b_1]s = \langle s', \lt\rangle \quad\quad \mathcal{B}'[b_2]s' = \langle s'', \lt\rangle}
+        {\mathcal{B}'[b_1 \land b_2]s = \langle s'', \lt \rangle} \\
+    \texttt{(and-2)} \quad & \frac
+        {\mathcal{B}'[b_1]s = \langle s',\lf\rangle \quad\quad \mathcal{B}'[b_2]s' = \langle s'', \cdot\rangle}
+        {\mathcal{B}'[b_1 \land b_2]s = \langle s'', \lf \rangle} \\
+    \texttt{(and-3)} \quad & \frac
+        {\mathcal{B}'[b_1]s = \langle s', \cdot\rangle \quad\quad \mathcal{B}'[b_2]s' = \langle s'', \lf\rangle}
+        {\mathcal{B}'[b_1 \land b_2]s = \langle s'', \lf \rangle} \\
+\end{aligned}
+$$
+\\
+It can be noted how \texttt{and-2} and \texttt{and-3} behave different from classical languages where if the first term is false they does not evaluate the second part.
+\end{document}

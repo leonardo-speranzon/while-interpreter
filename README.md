@@ -1,3 +1,4 @@
+>For building all the pdf file containing proofs and definitions, run `./build-pdf.sh`.
 # Interpreter for While<sup>+</sup> language 
 
 A rust implementation of an interpreter for while<sup>+</sup> language for the Software Verification course at UniPD
@@ -78,9 +79,10 @@ Using abstract interpretation to analyze program written in While language
 
 ## Addition to the while language 
 The analyzer support a couple of operation more than the original while language like:
-- `--` pre-dec and post-dec
-- `++` pre-inc and post-inc
+- `--` pre-dec and post-dec expression
+- `++` pre-inc and post-inc expression
 - `/` integer division
+The semantic for increment and decrement can be seen [here](inc-dec-semantic.pdf)
 
 ## Not supported thing
 Since the syntactics sugars were implemented before the inc and dec they was not supposed to work with them, so combining the two can cause problem.
