@@ -206,37 +206,21 @@ fn parse_bexpr_atomic(cst: &cst::BexprAtomic) -> ast::Bexpr<Num> {
             )
         }
         cst::BexprAtomic::Less(a1, a2) => 
-            //a1<a2 <=> a1<=a2 and not(a1 = a2)
-            ast::Bexpr::And(
+            // a1<a2 <=> not(a2 <= a1)
+            ast::Bexpr::Not(
                 Box::new(ast::Bexpr::LessEq(
+                    Box::new(parse_aexpr(a2)),
                     Box::new(parse_aexpr(a1)),
-                    Box::new(parse_aexpr(a2))
-                )),
-                Box::new(ast::Bexpr::Not(
-                    Box::new(ast::Bexpr::Equal(                    
-                        Box::new(parse_aexpr(a1)),
-                        Box::new(parse_aexpr(a2))
-                    ))                    
                 ))
             ),
         cst::BexprAtomic::GreaterEq(a1, a2) => 
-            //a1>=a2 <=> not(a1<a2) <=> not(a1<=a2 and not(a1 = a2))
-            ast::Bexpr::Not(
-                Box::new(ast::Bexpr::And(
-                    Box::new(ast::Bexpr::LessEq(
-                        Box::new(parse_aexpr(a1)),
-                        Box::new(parse_aexpr(a2))
-                    )),
-                    Box::new(ast::Bexpr::Not(
-                        Box::new(ast::Bexpr::Equal(                    
-                            Box::new(parse_aexpr(a1)),
-                            Box::new(parse_aexpr(a2))
-                        ))                    
-                    ))
-                ))
+            // a1>=a2 <=> a2<=a1
+            ast::Bexpr::LessEq(
+                Box::new(parse_aexpr(a2)),
+                Box::new(parse_aexpr(a1)),
             ),
         cst::BexprAtomic::Greater(a1, a2) => 
-            //a1>a2 <=> not(a1<=a2)
+            // a1>a2 <=> not(a1<=a2)
             ast::Bexpr::Not(
                 Box::new(ast::Bexpr::LessEq(
                     Box::new(parse_aexpr(a1)),
