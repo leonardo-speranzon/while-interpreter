@@ -32,7 +32,6 @@ impl<D: AbstractDomain> AbstractState<D> for HashMapState<D>  {
             (_, HashMapState(Some(s))) => HashMapState(Some(s.clone())),
             (_, _) => HashMapState(None)
         };
-        // println!("{:?}", new_s );
         new_s
     } 
     fn glb(self, other: &Self) -> Self { 

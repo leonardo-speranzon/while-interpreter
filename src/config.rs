@@ -46,6 +46,7 @@ pub struct AnalyzerConfiguration{
     pub domain_config: Option<String>,
     pub iteration_strategy: IterationStrategy,
     pub init_state: Option<String>,
+    pub print_iterations: bool,
 }
 
 #[derive(Debug)]
@@ -89,6 +90,7 @@ impl Config {
                 // .value_parser(parse_abs_state::<BoundedInterval>)
             )
             .arg(Arg::new("config").long("conf").help("Set the configuration for the domain"))
+            .arg(Arg::new("iter").long("iter").short('i').help("Print analyzer iterations").action(ArgAction::SetTrue))
             .args(parser_args)
             .arg_required_else_help(true);
             // .arg(Arg::new("lower").long("lower-bound").short('l').help("Lower bound").value_parser(clap::value_parser!(Num)).action(ArgAction::Set).required(true))
@@ -119,7 +121,7 @@ impl Config {
                         (true, true) => IterationStrategy::WideningAndNarrowing,
                     },
                     init_state: sub_m.get_one::<String>("state").cloned(), //sub_m.get_one::<HashMapState<BoundedInterval>>("state").cloned(),
-
+                    print_iterations: sub_m.get_flag("iter"),
                 }
             },
             _ => unreachable!(),

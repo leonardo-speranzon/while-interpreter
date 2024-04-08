@@ -60,20 +60,31 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for GenericAnal
 
 
         let mut iteration_num= 1;
-        println!("\nINITIAL STATES:\n{}\n", map_to_str(&all_state));
+        
+        let print_iters_enabled = std::env::var("print-iterations").is_ok_and(|s|s=="true");
+        if print_iters_enabled {
+            println!("╔════════════╗");
+            println!("║ Iterations ║");
+            println!("╚════════════╝"); 
+            println!("\nINITIAL STATES:\n{}\n", map_to_str(&all_state));
+        }
 
         if let IterationStrategy::Simple = iteration_strategy {            
             let mut new_all_state = Self::make_iteration(&prog, &init_state, all_state.clone(), StepType::NormalStep);
             while new_all_state != all_state {
                 all_state = new_all_state;
-                println!("ITERATION {}:\n{:?}\n",iteration_num, map_to_str(&all_state)); iteration_num+=1;
+                if print_iters_enabled {
+                    println!("ITERATION {}:\n{:?}\n",iteration_num, map_to_str(&all_state)); iteration_num+=1;
+                }
                 new_all_state = Self::make_iteration(&prog,&init_state,  all_state.clone(), StepType::NormalStep); 
             }
         }else {
             let mut new_all_state = Self::make_iteration(&prog,&init_state,  all_state.clone(), StepType::WideningStep);
             while new_all_state != all_state {
                 all_state = new_all_state;
-                println!("ITERATION (∇) {}:\n{:?}\n",iteration_num, map_to_str(&all_state)); iteration_num+=1;
+                if print_iters_enabled {
+                    println!("ITERATION (∇) {}:\n{:?}\n",iteration_num, map_to_str(&all_state)); iteration_num+=1;
+                }
                 new_all_state = Self::make_iteration(&prog,&init_state,  all_state.clone(), StepType::WideningStep); 
             }
 
@@ -81,7 +92,9 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for GenericAnal
                 let mut new_all_state = Self::make_iteration(&prog,&init_state,  all_state.clone(), StepType::NarrowingStep);                
                 while new_all_state != all_state {
                     all_state = new_all_state;
-                    println!("ITERATION (Δ) {}:\n{:?}\n",iteration_num, map_to_str(&all_state)); iteration_num+=1;
+                    if print_iters_enabled {
+                        println!("ITERATION (Δ) {}:\n{:?}\n",iteration_num, map_to_str(&all_state)); iteration_num+=1;
+                    }
                     new_all_state = Self::make_iteration(&prog, &init_state, all_state.clone(), StepType::NarrowingStep); 
                 }
             }   
@@ -89,6 +102,8 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for GenericAnal
         all_state
     }
 }
+
+
 
 enum StepType {
     NormalStep,
@@ -136,13 +151,11 @@ impl<D: AbstractDomain, B: AbstractState<D>> GenericAnalyzer<D,B>{
         match cmd {
             Command::Assignment(x, a) => {
                 let (aexpr_dom, mut s2) = Self::eval_aexpr(a, state);
-                // println!("aexpr_dom: {:?}", aexpr_dom);
                 s2.set(x.to_string(), aexpr_dom);
                 state = s2
             },
             Command::Test(b) => {
                 state = Self::eval_bexpr(b, state);
-                // println!("Apply test: {b} -> {old_state} -> {state}");
             },
         }
         state

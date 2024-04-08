@@ -11,9 +11,9 @@ pub trait StaticAnalyzer<D: AbstractDomain, B: AbstractState<D>> {
 
     fn init(ast: Statement<Num>) -> Program<D> {
         let p = Program::from(ast);
-        println!("\nProgram:{:?}\n\n", p);
+        // println!("\nProgram:{:?}\n\n", p);
         let abs_prog = abstract_program(p);
-        println!("\nAbstract Program: {:?}\n\n", abs_prog);
+        // println!("\nAbstract Program: {:?}\n\n", abs_prog);
         abs_prog
     }
     fn analyze(p: Program<D>, init_state: B, iteration_strategy: IterationStrategy) -> HashMap<Label, B>;

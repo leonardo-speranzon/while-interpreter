@@ -76,7 +76,8 @@ fn main() {
             }
         },
         Config::AnalyzerConfiguration { config, .. } => {  
-            println!("{:?}",config);
+            std::env::set_var("print-iterations",config.print_iterations.to_string());
+            // println!("{:?}",config);
 
             let (prog_int, result) = match config.domain {
                 config::Domain::Sign => analyze::<Sign>(ast.clone(), config),                

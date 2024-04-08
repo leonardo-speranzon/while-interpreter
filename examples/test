@@ -1,9 +1,10 @@
 // x:= 10;
-//y:= 1;
-while x != 0 do {
+y:= -10;
+while x > 0 do {
 	//while x <= 100 do {
 	//	x*=2;
 	//}
-	x-=1;
-	// x:=x;
+	// x-=1;
+	x+= y;
+	// skip;
 }
