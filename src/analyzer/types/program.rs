@@ -6,7 +6,6 @@ use crate::types::ast::{Statement, Aexpr, Var, Bexpr};
 pub struct Program<D: Clone> {
     pub labels_num: Label,
     pub entry: Label, // always first index
-    pub exit: Label,  // always last index
     pub widening_points: Vec<Label>,
     pub arcs: Vec<Arc<D>>
 }
@@ -21,7 +20,7 @@ pub enum Command<D> {
 }
 
 impl<D: Clone> Program<D>{
-    pub fn new(arcs: Vec<(Label, Command<D>, Label)>) -> Self {
+    pub fn new(arcs: Vec<(Label, Command<D>, Label)>, widening_points: Vec<Label>) -> Self {
         let max_label = (&arcs)
             .into_iter()
             .map(|(l1,_,l2)| max(l1,l2))
@@ -30,19 +29,11 @@ impl<D: Clone> Program<D>{
         Program {
             labels_num: max_label + 1,
             entry: 0,
-            exit: *max_label,
-            widening_points: vec![],
+            widening_points,
             arcs,
         }
     }
-    pub fn compute_widening_point(&mut self){
-        let points = self.arcs.iter()
-            .counts_by(|(_,_,l)| l)
-            .iter()
-            .filter_map(|(l,n)| if n>=&2 || (l==&&0 && n==&1){Some(**l)} else {None})
-            .collect::<Vec<_>>();
-        self.widening_points = points;
-    }
+    
 
     pub fn get_entering_arcs(self: &Self, label: Label) -> Vec<&Arc<D>>{
         self.arcs.iter().filter(|(_,_,l)|l==&label).collect()
@@ -59,79 +50,71 @@ impl<D: Clone> From<Statement<D>> for Program<D>{
 fn stm_to_program<D: Clone>(stm: Statement<D>) -> Program<D>{
     match stm {
         Statement::Assign(x, a) => 
-            Program::new(vec![(0,Command::Assignment(x,*a),1)]),
-        Statement::Skip => Program::new(Vec::new()),
+            Program::new(vec![(0,Command::Assignment(x,*a),1)], vec![]),
+        Statement::Skip => Program::new(Vec::new(), vec![]),
         Statement::Compose(s1, s2) => {
             let mut p1 = stm_to_program(*s1);
             let p2 = stm_to_program(*s2);
             let offset = p1.labels_num - 1;
-            let mut arcs2: Vec<Arc<D>> = p2.arcs
-                .into_iter()
-                .map(|(l1,c,l2)|(l1+offset, c, l2+offset))
-                .collect();
+            let mut arcs2: Vec<Arc<D>> = shift_arcs(p2.arcs.clone(), offset,p2.labels_num-1,p2.labels_num-1+offset);
             arcs2.append(&mut p1.arcs);
-            Program::new(arcs2)
+            let widening_points = [p1.widening_points, p2.widening_points.iter().map(|x|x+offset).collect_vec()].concat();
+            Program::new(arcs2, widening_points)
         },
         Statement::IfThenElse(b, s1, s2) => {
             let p1 = stm_to_program(*s1);
             let p2 = stm_to_program(*s2);
-            let offset_p1 = 1;
-            let offset_p2 = p1.labels_num;
-            let exit_label = p1.labels_num + p2.labels_num - 1;
+
+            let offset_p1 = if p1.labels_num > 1 { 1 } else { 0 };
+            let offset_p2 = offset_p1 + 1;
+            let exit_label = offset_p2 + p2.labels_num - 1 ;
+            
             let mut arcs = vec![
-                (0,Command::Test(*b.clone()),offset_p1),
+                (0,Command::Test(*b.clone()),if p1.labels_num > 1 { 1 } else { exit_label }),
                 (0,Command::Test(Bexpr::Not(b)), offset_p2)
             ];
-            let mut p1_arcs: Vec<Arc<D>> = p1.arcs
-                .into_iter()
-                .map(|(l1,c,l2)|{
-                    if l2 == p1.exit {
-                        (l1+offset_p1, c, exit_label)
-                    } else {
-                        (l1+offset_p1, c, l2+offset_p1)
-                    }
-                })
-                .collect();
-            let mut p2_arcs: Vec<Arc<D>> = p2.arcs
-                .into_iter()
-                .map(|(l1,c,l2)|{
-                    if l2 == p2.exit {
-                        (l1+offset_p2, c, exit_label)
-                    } else {
-                        (l1+offset_p2, c, l2+offset_p2)
-                    }
-                })
-                .collect();
+            let mut p1_arcs: Vec<Arc<D>> = shift_arcs(p1.arcs.clone(), offset_p1,p1.labels_num-1,exit_label);
+            let mut p2_arcs: Vec<Arc<D>> = shift_arcs(p2.arcs.clone(), offset_p2,p2.labels_num-1,exit_label);
             arcs.append(&mut p1_arcs);
             arcs.append(&mut p2_arcs);
-            Program::new(arcs)
+
+            let widening_points = [
+                p1.widening_points.iter().map(|x|x+offset_p1).collect_vec(),
+                p2.widening_points.iter().map(|x|x+offset_p2).collect_vec()
+            ].concat();
+            Program::new(arcs, widening_points)
         },
         Statement::While(b, s) => {
             let p1 = stm_to_program(*s);
             let offset = 1;
-            let exit_label = p1.exit + 1;
+            let exit_label = p1.labels_num;
             let mut arcs = vec![
                 (0,Command::Test(*b.clone()), if p1.labels_num == 1 { 0 } else { 1 }),
                 (0,Command::Test(Bexpr::Not(b)), exit_label)
             ];
-            let mut p1_arcs: Vec<Arc<D>> = p1.arcs
-                .into_iter()
-                .map(|(l1,c,l2)|{
-                    if l2 == p1.exit {
-                        (l1+offset, c, 0)
-                    } else {
-                        (l1+offset, c, l2+offset)
-                    }
-                })
-                .collect();
-
+            let mut p1_arcs: Vec<Arc<D>> = shift_arcs(p1.arcs.clone(), offset,p1.labels_num-1,0);
             arcs.append(&mut p1_arcs);
-            Program::new(arcs)
+
+            let widening_points = [
+                vec![0],
+                p1.widening_points.iter().map(|x|x+offset).collect_vec()
+            ].concat();
+            Program::new(arcs, widening_points)
         },
     }
 }
 
-
+fn shift_arcs<D>(arcs: Vec<Arc<D>>, offset: Label, old_exit: Label, new_exit: Label) -> Vec<Arc<D>>{
+    arcs.into_iter()
+    .map(|(l1,c,l2)|{
+        if l2 == old_exit {
+            (l1+offset, c, new_exit)
+        } else {
+            (l1+offset, c, l2+offset)
+        }
+    })
+    .collect()
+}
 
 pub trait ProgramInterface{
     fn get_end_label(&self)-> Label;
@@ -139,7 +122,7 @@ pub trait ProgramInterface{
 }
 impl<D: Clone> ProgramInterface for Program<D>  {
     fn get_end_label(&self)-> Label {
-        self.exit
+        self.labels_num -1 
     }
 
     fn get_loop_label(&self) -> &Vec<Label> {

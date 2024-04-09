@@ -11,10 +11,7 @@ pub fn abstract_program<D:AbstractDomain>(prog: Program<Num>) -> Program<D>{
         };
         (l1,abs_cmd,l2)
     }).collect();
-    let mut prog = Program::new(abs_arcs);
-
-    prog.compute_widening_point();
-    prog
+    Program::new(abs_arcs,prog.widening_points)
 }
 fn translate_aexpr<D:AbstractDomain>(a: Aexpr<Num>) -> Aexpr<D>{
     match a {
