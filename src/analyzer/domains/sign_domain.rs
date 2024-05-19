@@ -1,5 +1,5 @@
 use std::{cmp::Ordering, fmt::Display, ops::{Add, Div, Mul, Sub}, str::FromStr};
-use crate::{analyzer::types::domain::Interval, types::ast::{Num, Operator}};
+use crate::{analyzer::types::domain::Interval, types::ast::Num};
 use crate::analyzer::types::domain::AbstractDomain;
 
 

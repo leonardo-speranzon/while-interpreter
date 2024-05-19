@@ -2,7 +2,7 @@ use std::{ cmp::{max, min, Ordering,}, fmt::Display, ops::{Add, Div, Mul, Sub}, 
 use iter_tools::Itertools;
 use once_cell::sync::OnceCell;
 
-use crate::{analyzer::types::domain::{AbstractDomain, Interval}, types::ast::{Num, Operator}};
+use crate::{analyzer::types::domain::{AbstractDomain, Interval}, types::ast::Num};
 
 use super::extended_num::ExtendedNum;
 
