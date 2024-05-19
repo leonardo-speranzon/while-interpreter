@@ -8,6 +8,7 @@ pub fn eval_bexpr<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B
         Bexpr::False => B::bottom(),
         Bexpr::Equal(a1, a2) => {
             match (a1 as &Aexpr<D>, a2 as &Aexpr<D>) {
+                // Equality between one constant and one var/inc/dec
                 (Aexpr::Num(c), ref a@Aexpr::Var(ref x)) | (ref a@Aexpr::Var(ref x), Aexpr::Num(c)) | 
                 (Aexpr::Num(c), ref a@Aexpr::PostInc(ref x)) | (ref a@Aexpr::PostInc(ref x), Aexpr::Num(c)) |
                 (Aexpr::Num(c), ref a@Aexpr::PostDec(ref x)) | (ref a@Aexpr::PostDec(ref x), Aexpr::Num(c)) |
@@ -18,8 +19,10 @@ pub fn eval_bexpr<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B
                     let state = eval_post(a, state);
                     return state;
                 }
+                // Two variable
                 (Aexpr::Var(x), Aexpr::Var(y)) => 
                     tests::test_eq_case_2(state, x.clone(), y.clone(), D::from(0)),
+                // All other cases (best approx for 2 constants)
                 (a1,a2) => {
                     let (n1, s1) = GenericAnalyzer::eval_aexpr(&a1, state);
                     let (n2, s2) = GenericAnalyzer::eval_aexpr(&a2, s1);

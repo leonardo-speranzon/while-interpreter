@@ -161,9 +161,6 @@ impl AbstractDomain for BoundedInterval{
         }
     }
 
-    fn backward_abstract_operator(_op: &Operator, _lhs: &Self, _rhs: &Self, _res: &Self) -> (Self, Self) {
-        todo!()
-    }
 
     fn all_gte(lb: &Self) -> Self {
         match lb {

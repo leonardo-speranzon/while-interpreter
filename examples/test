@@ -1,10 +1,16 @@
 // x:= 10;
-y:= -10;
-while x > 0 do {
+// x:= 0;
+// y:= 0;
+if x >= y and z >= y and x >= z then {
+	c := 1;
 	//while x <= 100 do {
 	//	x*=2;
 	//}
 	// x-=1;
-	x+= y;
+	// x+= y;
 	// skip;
+} else {
+	// skip;
+	// c:= 2;
+	c:= 2/0;
 }

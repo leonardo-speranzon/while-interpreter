@@ -26,7 +26,20 @@ pub trait AbstractDomain : Debug + Display + PartialOrd + Clone + Sized + From<N
             Operator::Div => lhs.clone() / rhs.clone(),
         }
     }
-    fn backward_abstract_operator(op: &Operator, lhs: &Self, rhs: &Self, res: &Self) -> (Self, Self);
+    fn backward_abstract_operator(op: &Operator, lhs: &Self, rhs: &Self, res: &Self) -> (Self, Self){
+        match op {
+            Operator::Add => (
+                lhs.glb(&Self::abstract_operator(&Operator::Sub, res, rhs)),
+                rhs.glb(&Self::abstract_operator(&Operator::Sub, res, lhs)),
+            ),
+            Operator::Sub => (
+                lhs.glb(&Self::abstract_operator(&Operator::Add, res, rhs)),
+                rhs.glb(&Self::abstract_operator(&Operator::Sub, lhs, res)),
+            ),
+            Operator::Mul => todo!(),
+            Operator::Div => todo!(),
+        }
+    }
 
     fn widening(self, other:Self) -> Self {
         self.lub(&other) //Trivial widening (possible infinite ascending chain)
