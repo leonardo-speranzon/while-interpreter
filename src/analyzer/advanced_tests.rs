@@ -5,17 +5,17 @@ use crate::types::ast::{Aexpr, Bexpr, Operator, Var};
 use super::{analyzers::generic_analyzer::GenericAnalyzer, types::{analyzer::StaticAnalyzer, domain::{AbstractDomain, Interval}, state::AbstractState}};
 
 
-pub fn eval_bexpr_v2<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B) -> B {
+pub fn eval_bexpr<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B) -> B {
     if include_critical_ops(&b) {
         return eval_bexpr_dumb(b, state)
     }
     let mut state = eval_pre_b(b, state);
 
-    let mut new_state = eval_bexpr_v2_h(b, state.clone());
+    let mut new_state = eval_bexpr_h(b, state.clone(), false);
     // let  mut i = 1;
     while &new_state != &state {
         state = state.glb(&new_state);
-        new_state = eval_bexpr_v2_h(b, state.clone());
+        new_state = eval_bexpr_h(b, state.clone(), false);
         // i+=1;
     }
     // println!("Computed test in {} iterations", i);
@@ -49,38 +49,36 @@ fn eval_bexpr_dumb<D: AbstractDomain, B: AbstractState<D>> (b: &Bexpr<D>, state:
 }
 
 
-fn eval_bexpr_v2_h<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B) -> B{
+fn eval_bexpr_h<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B, negated: bool) -> B{
     match b {
         Bexpr::True => state,
         Bexpr::False => B::bottom(),
-        Bexpr::Equal(a1, a2) => advanced_abstract_tests(a1, a2, state, &D::from(0)),
-        Bexpr::LessEq(a1, a2) => advanced_abstract_tests(a1, a2, state, &D::from(Interval::OpenLeft(0))),
-        Bexpr::And(b1, b2) => {
-            let state1 = eval_bexpr_v2_h(b1, state.clone());
-            let state2 = eval_bexpr_v2_h(b2, state);
-            state1.glb(&state2)
+        Bexpr::Equal(a1, a2) => {
+            let interval = if !negated {
+                D::from(0) // == 0
+            } else {
+                D::from(Interval::OpenLeft(-1)).lub(&D::from(Interval::OpenRight(1))) // != 0
+            };
+            advanced_abstract_tests(a1, a2, state, &interval)
         },
-        Bexpr::Not(b) => {
-            match b as &Bexpr<D> { 
-                Bexpr::True => AbstractState::bottom(),
-                Bexpr::False => state,
-                Bexpr::Equal(a1, a2) => {
-                  // a1 != a2
-                  let not_zero =   D::from(Interval::OpenLeft(-1)).lub(&D::from(Interval::OpenRight(1)));
-                  advanced_abstract_tests(a1, a2, state, &not_zero)
-                },
-                Bexpr::LessEq(a1, a2) => 
-                    // a1 > a2
-                    advanced_abstract_tests(a1, a2, state, &D::from(Interval::OpenRight(1))), 
-                Bexpr::Not(b) => eval_bexpr_v2(b, state), // b
-                Bexpr::And(b1, b2) => {
-                    //b1 || b2 
-                    let state1 = eval_bexpr_v2_h(b1, state.clone());
-                    let state2 = eval_bexpr_v2_h(b2, state);
-                    state1.lub(&state2)
-                }, 
+        Bexpr::LessEq(a1, a2) => {
+            let interval = if !negated {
+                D::from(Interval::OpenLeft(0)) // <= 0
+            } else {
+                D::from(Interval::OpenRight(1)) // > 0
+            };
+            advanced_abstract_tests(a1, a2, state, &interval)
+        },
+        Bexpr::And(b1, b2) => {
+            let state1 = eval_bexpr_h(b1, state.clone(), negated);
+            let state2 = eval_bexpr_h(b2, state, negated);
+            if !negated {
+                state1.glb(&state2) // AND
+            } else {
+                state1.lub(&state2) // OR
             }
-        }
+        },
+        Bexpr::Not(b) => eval_bexpr_h(b, state, !negated)
     }
 }
 

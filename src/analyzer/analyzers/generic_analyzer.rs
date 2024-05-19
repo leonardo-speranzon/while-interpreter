@@ -48,7 +48,7 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for GenericAnal
     }
 
     fn eval_bexpr(b: &Bexpr<D>, s: B)-> B {
-        advanced_tests::eval_bexpr_v2(b, s)
+        advanced_tests::eval_bexpr(b, s)
     }
 
     fn analyze(prog: Program<D>, init_state: B, iteration_strategy: IterationStrategy) -> HashMap<Label, B> {
