@@ -1,30 +1,31 @@
 use std::{cmp::Ordering, fmt::Display, ops::{Add, Div, Mul, Sub}, str::FromStr};
 
-use crate::types::ast::{Num, Operator};
+use crate::{analyzer::types::domain::Interval, types::ast::{Num, Operator}};
 use crate::analyzer::types::domain::AbstractDomain;
 
+
 #[derive(Debug,PartialEq,Clone)]
-pub struct ExtendedSign{
+pub struct ExtendedSignDomain{
     positive: bool,
     zero: bool,
     negative: bool,
 }
 
-impl Display for ExtendedSign{
+impl Display for ExtendedSignDomain{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ExtendedSign{positive: false, zero: false, negative: false} =>  write!(f, "⊥"),
-            ExtendedSign{positive: false, zero: false, negative: true } =>  write!(f, "<0"),
-            ExtendedSign{positive: false, zero: true,  negative: false} =>  write!(f, "0"),
-            ExtendedSign{positive: false, zero: true,  negative: true } =>  write!(f, "≤0"),
-            ExtendedSign{positive: true,  zero: false, negative: false} =>  write!(f, ">0"),
-            ExtendedSign{positive: true,  zero: false, negative: true } =>  write!(f, "≠0"),
-            ExtendedSign{positive: true,  zero: true,  negative: false} =>  write!(f, "≥0"),
-            ExtendedSign{positive: true,  zero: true,  negative: true } =>  write!(f, "⊤"),
+            ExtendedSignDomain{positive: false, zero: false, negative: false} =>  write!(f, "⊥"),
+            ExtendedSignDomain{positive: false, zero: false, negative: true } =>  write!(f, "<0"),
+            ExtendedSignDomain{positive: false, zero: true,  negative: false} =>  write!(f, "0"),
+            ExtendedSignDomain{positive: false, zero: true,  negative: true } =>  write!(f, "≤0"),
+            ExtendedSignDomain{positive: true,  zero: false, negative: false} =>  write!(f, ">0"),
+            ExtendedSignDomain{positive: true,  zero: false, negative: true } =>  write!(f, "≠0"),
+            ExtendedSignDomain{positive: true,  zero: true,  negative: false} =>  write!(f, "≥0"),
+            ExtendedSignDomain{positive: true,  zero: true,  negative: true } =>  write!(f, "⊤"),
         }
     }
 }
-impl PartialOrd for ExtendedSign{
+impl PartialOrd for ExtendedSignDomain{
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         if self == other { Some(Ordering::Equal) }
         else if imply(other.positive, self.positive) && imply(other.zero, self.zero) && imply(other.negative, self.negative){
@@ -40,16 +41,40 @@ fn imply(b1: bool, b2: bool) -> bool{
     !b1 || b2 
 }
 
-impl From<Num> for ExtendedSign{
+impl From<Num> for ExtendedSignDomain{
     fn from(value: Num) -> Self {
         match value.cmp(&0){
-            std::cmp::Ordering::Less => ExtendedSign{positive:false, zero: false, negative: true },
-            std::cmp::Ordering::Equal => ExtendedSign{positive:false, zero: true, negative: false },
-            std::cmp::Ordering::Greater => ExtendedSign{positive:true, zero: false, negative: false },
+            std::cmp::Ordering::Less => ExtendedSignDomain{positive:false, zero: false, negative: true },
+            std::cmp::Ordering::Equal => ExtendedSignDomain{positive:false, zero: true, negative: false },
+            std::cmp::Ordering::Greater => ExtendedSignDomain{positive:true, zero: false, negative: false },
         }
     }
 }
-impl FromStr for ExtendedSign{
+
+impl From<Interval> for ExtendedSignDomain {
+    fn from(value: Interval) -> Self {
+        match value {
+            Interval::OpenLeft(max) => {
+                if max<0 { Self{positive:false,zero:false,negative:true} }
+                else if max == 0 {Self{positive:false,zero:true,negative:true}}
+                else {Self{positive:true,zero:true,negative:true}}
+            },
+            Interval::OpenRight(min) => {
+                if min<0 { Self{positive:true,zero:true,negative:true} }
+                else if min == 0 {Self{positive:true,zero:true,negative:false}}
+                else {Self{positive:true,zero:false,negative:false}}
+            },
+            Interval::Closed(min, max) => {
+                if min == 0 && max == 0 { Self{positive:false,zero:true,negative:false} }
+                else if min == 0 {Self{positive:true,zero:true,negative:false}}
+                else if max == 0 {Self{positive:false,zero:true,negative:true}}
+                else {Self{positive:true,zero:true,negative:true}}
+            },
+        }
+    }
+}
+
+impl FromStr for ExtendedSignDomain{
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -65,17 +90,17 @@ impl FromStr for ExtendedSign{
     }
 }
 
-impl AbstractDomain for ExtendedSign{
+impl AbstractDomain for ExtendedSignDomain{
     fn bottom() -> Self {
-        ExtendedSign{positive:false, zero: false, negative: false }
+        ExtendedSignDomain{positive:false, zero: false, negative: false }
     }
 
     fn top() -> Self {
-        ExtendedSign{positive:true, zero: true, negative: true }
+        ExtendedSignDomain{positive:true, zero: true, negative: true }
     }
 
     fn lub(&self, other: &Self) -> Self {
-        ExtendedSign{
+        ExtendedSignDomain{
             positive: self.positive || other.positive,
             zero: self.zero || other.zero,
             negative: self.negative || other.negative
@@ -83,45 +108,28 @@ impl AbstractDomain for ExtendedSign{
     }
 
     fn glb(&self, other: &Self) -> Self {
-        ExtendedSign{
+        ExtendedSignDomain{
             positive: self.positive && other.positive,
             zero: self.zero && other.zero,
             negative: self.negative && other.negative
         }
     }
     
-    fn backward_abstract_operator(_op: &Operator, _lhs: &Self, _rhs: &Self, _res: &Self) -> (Self, Self) {
-        todo!()
-    }
-
-    fn all_gte(lb: &Self) -> Self {
-        if lb.negative {ExtendedSign{positive:true, zero: true, negative: true }}
-        else if lb.zero {ExtendedSign{positive:true, zero: true, negative: false }}
-        else if lb.positive {ExtendedSign{positive:true, zero: false, negative: false }}
-        else {ExtendedSign{positive:false, zero: false, negative: false }}
-    }
-
-    fn all_lte(ub: &Self) -> Self {
-        if ub.positive {ExtendedSign{positive:true, zero: true, negative: true }}
-        else if ub.zero {ExtendedSign{positive:false, zero: true, negative: true }}
-        else if ub.negative {ExtendedSign{positive:false, zero: false, negative: true }}
-        else {ExtendedSign{positive:false, zero: false, negative: false }}
-    }
 
 }
 
-impl ExtendedSign{
+impl ExtendedSignDomain{
     fn is_bottom(&self) -> bool{
         return !self.negative && !self.zero && !self.positive
     }
 }
 
-impl Add for ExtendedSign{
+impl Add for ExtendedSignDomain{
     type Output = Self;
     fn add(self, rhs: Self) -> Self::Output {
         if self.is_bottom() || rhs.is_bottom() { return Self::bottom(); }
 
-        let mut res = ExtendedSign{positive:false, zero: false, negative: false};
+        let mut res = ExtendedSignDomain{positive:false, zero: false, negative: false};
 
         res.negative = self.negative || rhs.negative;
 
@@ -133,12 +141,12 @@ impl Add for ExtendedSign{
         return res;
     }
 }
-impl Sub for ExtendedSign{
+impl Sub for ExtendedSignDomain{
     type Output = Self;
     fn sub(self, rhs: Self) -> Self::Output {
         if self.is_bottom() || rhs.is_bottom() { return Self::bottom(); }
 
-        let mut res = ExtendedSign{positive:false, zero: false, negative: false};
+        let mut res = ExtendedSignDomain{positive:false, zero: false, negative: false};
 
         res.negative = self.negative || rhs.positive;
 
@@ -151,12 +159,12 @@ impl Sub for ExtendedSign{
         return res;
     }
 }
-impl Mul for ExtendedSign{
+impl Mul for ExtendedSignDomain{
     type Output = Self;
     fn mul(self, rhs: Self) -> Self::Output {
         if self.is_bottom() || rhs.is_bottom() { return Self::bottom(); }
 
-        let mut res = ExtendedSign{positive:false, zero: false, negative: false};
+        let mut res = ExtendedSignDomain{positive:false, zero: false, negative: false};
 
         res.negative = (self.positive && rhs.negative)
                     || (self.negative && rhs.positive);
@@ -169,12 +177,12 @@ impl Mul for ExtendedSign{
         return res;
     }
 }
-impl Div for ExtendedSign{
+impl Div for ExtendedSignDomain{
     type Output = Self;
     fn div(self, rhs: Self) -> Self::Output {
         if self.is_bottom() || rhs.is_bottom() { return Self::bottom(); }
 
-        let mut res = ExtendedSign{positive:false, zero: false, negative: false};
+        let mut res = ExtendedSignDomain{positive:false, zero: false, negative: false};
 
         res.negative = (self.positive && rhs.negative)
                     || (self.negative && rhs.positive);

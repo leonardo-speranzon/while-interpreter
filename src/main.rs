@@ -1,5 +1,5 @@
 use std::{collections::HashMap, fmt::Display, fs::File};
-use analyzer::{domains::{bounded_interval_domain::BoundedInterval, extended_sign_domain::ExtendedSign, sign_domain::Sign}, analyzers::generic_analyzer::GenericAnalyzer, states::hashmap_state::HashMapState, types::{analyzer::StaticAnalyzer, domain::AbstractDomain, program::{Label, Program, ProgramInterface}, state::AbstractState}};
+use analyzer::{domains::{bounded_interval_domain::BoundedIntervalDomain, extended_sign_domain::ExtendedSignDomain, sign_domain::SignDomain}, analyzers::generic_analyzer::GenericAnalyzer, states::hashmap_state::HashMapState, types::{analyzer::StaticAnalyzer, domain::AbstractDomain, program::{Label, Program, ProgramInterface}, state::AbstractState}};
 use config::{AnalyzerConfiguration, Config};
 use interpreter::{types::State, interpreter::eval_statement};
 use parser::{ parse_string, parse_file};
@@ -80,9 +80,9 @@ fn main() {
             // println!("{:?}",config);
 
             let (prog_int, result) = match config.domain {
-                config::Domain::Sign => analyze::<Sign>(ast.clone(), config),                
-                config::Domain::ExtendedSign => analyze::<ExtendedSign>(ast.clone(), config),
-                config::Domain::BoundedInterval => analyze::<BoundedInterval>(ast.clone(), config),
+                config::Domain::Sign => analyze::<SignDomain>(ast.clone(), config),                
+                config::Domain::ExtendedSign => analyze::<ExtendedSignDomain>(ast.clone(), config),
+                config::Domain::BoundedInterval => analyze::<BoundedIntervalDomain>(ast.clone(), config),
             };
             println!("╔═════════════════╗");
             println!("║ Analyzer Result ║");

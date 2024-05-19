@@ -2,7 +2,7 @@ use std::{ cmp::{max, min, Ordering,}, fmt::Display, ops::{Add, Div, Mul, Sub}, 
 use iter_tools::Itertools;
 use once_cell::sync::OnceCell;
 
-use crate::{analyzer::types::domain::AbstractDomain, types::ast::{Num, Operator}};
+use crate::{analyzer::types::domain::{AbstractDomain, Interval}, types::ast::{Num, Operator}};
 
 use super::extended_num::ExtendedNum;
 
@@ -11,17 +11,17 @@ static BI_LOWER: OnceCell<ExtendedNum> = OnceCell::new();
 static BI_UPPER: OnceCell<ExtendedNum> = OnceCell::new();
 
 #[derive(Debug,PartialEq,Clone, Copy)]
-pub enum BoundedInterval{
+pub enum BoundedIntervalDomain{
     Range(ExtendedNum,ExtendedNum),
     Top,
     Bottom,
 }
-impl BoundedInterval {
+impl BoundedIntervalDomain {
     fn new(mut lower: ExtendedNum, mut upper: ExtendedNum) -> Self{
         match (BI_LOWER.get(), BI_UPPER.get()){
             (Some(lower_bound), Some(upper_bound)) => {       
                 if lower == upper && lower != ExtendedNum::NegInf && lower != ExtendedNum::PosInf{
-                    return BoundedInterval::Range(lower, lower);
+                    return BoundedIntervalDomain::Range(lower, lower);
                 }
 
                 lower =  if lower < *lower_bound {ExtendedNum::NegInf}
@@ -32,11 +32,11 @@ impl BoundedInterval {
                     else { ExtendedNum::PosInf };
 
                 if lower == ExtendedNum::NegInf && upper == ExtendedNum::PosInf {
-                    BoundedInterval::Top
+                    BoundedIntervalDomain::Top
                 } else if lower > upper {
-                    BoundedInterval::Bottom
+                    BoundedIntervalDomain::Bottom
                 } else {
-                    BoundedInterval::Range(lower, upper)
+                    BoundedIntervalDomain::Range(lower, upper)
                 }
             },
             _ => panic!("Missing configuration for BoundedInterval Domain")
@@ -45,13 +45,13 @@ impl BoundedInterval {
 }
 
 
-impl PartialOrd for BoundedInterval{
+impl PartialOrd for BoundedIntervalDomain{
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match (self, other) {
-            (BoundedInterval::Bottom, BoundedInterval::Bottom) | (BoundedInterval::Top, BoundedInterval::Top) => Some(Ordering::Equal),
-            (BoundedInterval::Top, _) | (_, BoundedInterval::Bottom) => Some(Ordering::Greater),
-            (BoundedInterval::Bottom, _) | (_, BoundedInterval::Top) => Some(Ordering::Less),
-            (BoundedInterval::Range(a, b), BoundedInterval::Range(c, d)) => {
+            (BoundedIntervalDomain::Bottom, BoundedIntervalDomain::Bottom) | (BoundedIntervalDomain::Top, BoundedIntervalDomain::Top) => Some(Ordering::Equal),
+            (BoundedIntervalDomain::Top, _) | (_, BoundedIntervalDomain::Bottom) => Some(Ordering::Greater),
+            (BoundedIntervalDomain::Bottom, _) | (_, BoundedIntervalDomain::Top) => Some(Ordering::Less),
+            (BoundedIntervalDomain::Range(a, b), BoundedIntervalDomain::Range(c, d)) => {
                 if a==c && b==d { Some(Ordering::Equal) }
                 else if a<=c && b>=d { Some(Ordering::Greater)}
                 else if a>=c && b<=d { Some(Ordering::Less)}
@@ -61,12 +61,21 @@ impl PartialOrd for BoundedInterval{
     }
 }
 
-impl From<Num> for BoundedInterval{
+impl From<Num> for BoundedIntervalDomain{
     fn from(value: Num) -> Self {
-        BoundedInterval::new(ExtendedNum::Num(value),ExtendedNum::Num(value))
+        BoundedIntervalDomain::new(ExtendedNum::Num(value),ExtendedNum::Num(value))
     }
 }
-impl FromStr for BoundedInterval{
+impl From<Interval> for BoundedIntervalDomain {
+    fn from(value: Interval) -> Self {
+        match value {
+            Interval::OpenLeft(max) => Self::new(ExtendedNum::NegInf, ExtendedNum::Num(max)),
+            Interval::OpenRight(min) => Self::new(ExtendedNum::Num(min), ExtendedNum::PosInf),
+            Interval::Closed(min, max) => Self::new(ExtendedNum::Num(min), ExtendedNum::Num(max)),
+        }
+    }
+}
+impl FromStr for BoundedIntervalDomain{
     type Err = String;
 
     // "[1,10]", "[-inf,10]", "[-inf,inf]"
@@ -98,7 +107,7 @@ impl FromStr for BoundedInterval{
     }
 }
 
-impl AbstractDomain for BoundedInterval{
+impl AbstractDomain for BoundedIntervalDomain{
     fn set_config(config_string: Option<String>) -> Result<(), String>{
         match config_string {
             Some(conf) => {
@@ -134,73 +143,57 @@ impl AbstractDomain for BoundedInterval{
     }
 
 
-    fn bottom() -> Self { BoundedInterval::Bottom }
-    fn top() -> Self { BoundedInterval::Top }
+    fn bottom() -> Self { BoundedIntervalDomain::Bottom }
+    fn top() -> Self { BoundedIntervalDomain::Top }
 
     fn lub(&self, other: &Self) -> Self {
         match (self,other) {
-            (BoundedInterval::Top,_) | (_, BoundedInterval::Top) => BoundedInterval::Top,
-            (BoundedInterval::Bottom, i) | (i, BoundedInterval::Bottom) => i.clone(),
-            (BoundedInterval::Range(a, b), BoundedInterval::Range(c, d)) =>{
+            (BoundedIntervalDomain::Top,_) | (_, BoundedIntervalDomain::Top) => BoundedIntervalDomain::Top,
+            (BoundedIntervalDomain::Bottom, i) | (i, BoundedIntervalDomain::Bottom) => i.clone(),
+            (BoundedIntervalDomain::Range(a, b), BoundedIntervalDomain::Range(c, d)) =>{
                 let lower = min(a,c).clone();
                 let upper = max(b,d).clone();
-                BoundedInterval::new(lower, upper)
+                BoundedIntervalDomain::new(lower, upper)
             }
         }
     }
 
     fn glb(&self, other: &Self) -> Self {
         match (self,other) {
-            (BoundedInterval::Bottom,_) | (_, BoundedInterval::Bottom) => BoundedInterval::Bottom,
-            (BoundedInterval::Top, i) | (i, BoundedInterval::Top) => i.clone(),
-            (BoundedInterval::Range(a, b), BoundedInterval::Range(c, d)) =>{
+            (BoundedIntervalDomain::Bottom,_) | (_, BoundedIntervalDomain::Bottom) => BoundedIntervalDomain::Bottom,
+            (BoundedIntervalDomain::Top, i) | (i, BoundedIntervalDomain::Top) => i.clone(),
+            (BoundedIntervalDomain::Range(a, b), BoundedIntervalDomain::Range(c, d)) =>{
                 let lower = max(a,c).clone();
                 let upper = min(b,d).clone();
-                BoundedInterval::new(lower, upper)
+                BoundedIntervalDomain::new(lower, upper)
             }
         }
     }
 
 
-    fn all_gte(lb: &Self) -> Self {
-        match lb {
-            BoundedInterval::Range(a, _) => BoundedInterval::new(*a, ExtendedNum::PosInf),
-            BoundedInterval::Top => BoundedInterval::Top,
-            BoundedInterval::Bottom =>  BoundedInterval::Bottom ,
-        }
-        
-    }
-
-    fn all_lte(ub: &Self) -> Self {
-        match ub {
-            BoundedInterval::Range(_, b) => BoundedInterval::new(ExtendedNum::NegInf, *b),
-            BoundedInterval::Top => BoundedInterval::Top,
-            BoundedInterval::Bottom =>  BoundedInterval::Bottom ,
-        }
-    }
 
     fn widening(self, other:Self) -> Self {
         match(self, other){
-            (BoundedInterval::Bottom, x) | (x, BoundedInterval::Bottom) => x,
-            (BoundedInterval::Top, _) | (_, BoundedInterval::Top) => BoundedInterval::Top,
+            (BoundedIntervalDomain::Bottom, x) | (x, BoundedIntervalDomain::Bottom) => x,
+            (BoundedIntervalDomain::Top, _) | (_, BoundedIntervalDomain::Top) => BoundedIntervalDomain::Top,
 
-            (BoundedInterval::Range(a, b), BoundedInterval::Range(c, d)) =>{
+            (BoundedIntervalDomain::Range(a, b), BoundedIntervalDomain::Range(c, d)) =>{
                 let l = if a<=c { a } else { ExtendedNum::NegInf };
                 let u = if b>=d { b } else { ExtendedNum::PosInf };
-                BoundedInterval::new(l,u)
+                BoundedIntervalDomain::new(l,u)
             }
         }
     }
 
     fn narrowing(self, other:Self) -> Self {
         match(self, other){
-            (BoundedInterval::Bottom, _) | (_, BoundedInterval::Bottom) => Self::Bottom,
-            (BoundedInterval::Top, x) | (x, BoundedInterval::Top) => x,
+            (BoundedIntervalDomain::Bottom, _) | (_, BoundedIntervalDomain::Bottom) => Self::Bottom,
+            (BoundedIntervalDomain::Top, x) | (x, BoundedIntervalDomain::Top) => x,
 
-            (BoundedInterval::Range(a, b), BoundedInterval::Range(c, d)) =>{
+            (BoundedIntervalDomain::Range(a, b), BoundedIntervalDomain::Range(c, d)) =>{
                 let l = if a == ExtendedNum::NegInf { c } else { a };
                 let u = if b == ExtendedNum::PosInf { d } else { b };
-                BoundedInterval::new(l,u)
+                BoundedIntervalDomain::new(l,u)
             }
         }
     }
@@ -210,97 +203,97 @@ impl AbstractDomain for BoundedInterval{
     
 }
 
-impl Display for BoundedInterval{
+impl Display for BoundedIntervalDomain{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            BoundedInterval::Top => write!(f, "⊤"),
-            BoundedInterval::Bottom => write!(f, "⊥"),
-            BoundedInterval::Range(n1, n2) => write!(f, "[{n1},{n2}]"),
+            BoundedIntervalDomain::Top => write!(f, "⊤"),
+            BoundedIntervalDomain::Bottom => write!(f, "⊥"),
+            BoundedIntervalDomain::Range(n1, n2) => write!(f, "[{n1},{n2}]"),
         }
     }
 }
 
-impl Add for BoundedInterval{
-    type Output = BoundedInterval;
+impl Add for BoundedIntervalDomain{
+    type Output = BoundedIntervalDomain;
     fn add(self, rhs: Self) -> Self::Output {
         match (self,rhs){
-            (BoundedInterval::Bottom,_) | (_, BoundedInterval::Bottom) => BoundedInterval::Bottom,
-            (BoundedInterval::Top, _) | (_, BoundedInterval::Top) => BoundedInterval::Top,
-            (BoundedInterval::Range(a, b), BoundedInterval::Range(c, d)) => {
+            (BoundedIntervalDomain::Bottom,_) | (_, BoundedIntervalDomain::Bottom) => BoundedIntervalDomain::Bottom,
+            (BoundedIntervalDomain::Top, _) | (_, BoundedIntervalDomain::Top) => BoundedIntervalDomain::Top,
+            (BoundedIntervalDomain::Range(a, b), BoundedIntervalDomain::Range(c, d)) => {
                 let lower = a.clone()+c.clone();
                 let upper = b.clone()+d.clone();
-                BoundedInterval::new(lower, upper)
+                BoundedIntervalDomain::new(lower, upper)
             }
         }
     }
 }
-impl Sub for BoundedInterval{
-    type Output = BoundedInterval;
+impl Sub for BoundedIntervalDomain{
+    type Output = BoundedIntervalDomain;
     fn sub(self, rhs: Self) -> Self::Output {
         match (self,rhs){
-            (BoundedInterval::Bottom,_) | (_, BoundedInterval::Bottom) => BoundedInterval::Bottom,
-            (BoundedInterval::Top, _) | (_, BoundedInterval::Top) => BoundedInterval::Top,
-            (BoundedInterval::Range(a, b), BoundedInterval::Range(c, d)) => {
+            (BoundedIntervalDomain::Bottom,_) | (_, BoundedIntervalDomain::Bottom) => BoundedIntervalDomain::Bottom,
+            (BoundedIntervalDomain::Top, _) | (_, BoundedIntervalDomain::Top) => BoundedIntervalDomain::Top,
+            (BoundedIntervalDomain::Range(a, b), BoundedIntervalDomain::Range(c, d)) => {
                 let lower = a.clone()-d.clone();
                 let upper = b.clone()-c.clone();
-                BoundedInterval::new(lower, upper)
+                BoundedIntervalDomain::new(lower, upper)
             }
         }
     }
 }
-impl Mul for BoundedInterval{
-    type Output = BoundedInterval;
+impl Mul for BoundedIntervalDomain{
+    type Output = BoundedIntervalDomain;
     fn mul(self, rhs: Self) -> Self::Output {
         match (self,rhs){
-            (BoundedInterval::Bottom,_) | (_, BoundedInterval::Bottom) => BoundedInterval::Bottom,
-            (BoundedInterval::Top, BoundedInterval::Top) => BoundedInterval::Top,
-            (BoundedInterval::Top, BoundedInterval::Range(a, b)) | (BoundedInterval::Range(a, b), BoundedInterval::Top) =>{
+            (BoundedIntervalDomain::Bottom,_) | (_, BoundedIntervalDomain::Bottom) => BoundedIntervalDomain::Bottom,
+            (BoundedIntervalDomain::Top, BoundedIntervalDomain::Top) => BoundedIntervalDomain::Top,
+            (BoundedIntervalDomain::Top, BoundedIntervalDomain::Range(a, b)) | (BoundedIntervalDomain::Range(a, b), BoundedIntervalDomain::Top) =>{
                 if a == ExtendedNum::Num(0) && b == ExtendedNum::Num(0){
-                    BoundedInterval::new(ExtendedNum::Num(0), ExtendedNum::Num(0))
+                    BoundedIntervalDomain::new(ExtendedNum::Num(0), ExtendedNum::Num(0))
                 } else {
-                    BoundedInterval::Top
+                    BoundedIntervalDomain::Top
                 }
             },
-            (BoundedInterval::Range(a, b), BoundedInterval::Range(c, d)) => {
+            (BoundedIntervalDomain::Range(a, b), BoundedIntervalDomain::Range(c, d)) => {
                 let points = [a*c, a*d, b*c, b*d];
                 let lower = points.iter().min().unwrap().clone();               
                 let upper = points.iter().max().unwrap().clone();         
-                BoundedInterval::new(lower, upper)
+                BoundedIntervalDomain::new(lower, upper)
             }
         }
     }
     
 }
 
-impl Div for BoundedInterval{
-    type Output = BoundedInterval;
+impl Div for BoundedIntervalDomain{
+    type Output = BoundedIntervalDomain;
 
     fn div(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
-            (BoundedInterval::Bottom,_) | (_, BoundedInterval::Bottom) => BoundedInterval::Bottom,
-            (BoundedInterval::Top, BoundedInterval::Top) => BoundedInterval::Top,
-            (BoundedInterval::Top, BoundedInterval::Range(a, b))  =>{
+            (BoundedIntervalDomain::Bottom,_) | (_, BoundedIntervalDomain::Bottom) => BoundedIntervalDomain::Bottom,
+            (BoundedIntervalDomain::Top, BoundedIntervalDomain::Top) => BoundedIntervalDomain::Top,
+            (BoundedIntervalDomain::Top, BoundedIntervalDomain::Range(a, b))  =>{
                 if a == ExtendedNum::Num(0) && b == ExtendedNum::Num(0){
-                    BoundedInterval::Bottom
+                    BoundedIntervalDomain::Bottom
                 } else {
-                    BoundedInterval::Top
+                    BoundedIntervalDomain::Top
                 }
             },
-            (BoundedInterval::Range(a, b), BoundedInterval::Top) =>{
+            (BoundedIntervalDomain::Range(a, b), BoundedIntervalDomain::Top) =>{
                 if a == ExtendedNum::Num(0) && b == ExtendedNum::Num(0){
-                    BoundedInterval::new(ExtendedNum::Num(0), ExtendedNum::Num(0))
+                    BoundedIntervalDomain::new(ExtendedNum::Num(0), ExtendedNum::Num(0))
                 } else {
-                    BoundedInterval::Top
+                    BoundedIntervalDomain::Top
                 }
             },
-            (n1@BoundedInterval::Range(a, b), n2@BoundedInterval::Range(c, d)) => {
+            (n1@BoundedIntervalDomain::Range(a, b), n2@BoundedIntervalDomain::Range(c, d)) => {
                 if ExtendedNum::Num(1)<=c {
-                    BoundedInterval::new(min(a/c, a/d), max(b/c, b/d))
+                    BoundedIntervalDomain::new(min(a/c, a/d), max(b/c, b/d))
                 }else if d <= ExtendedNum::Num(-1) {
-                    BoundedInterval::new(min(b/c, b/d), max(a/c, a/d))
+                    BoundedIntervalDomain::new(min(b/c, b/d), max(a/c, a/d))
                 } else {
-                    let d1 = n1 / n2.glb(&BoundedInterval::new(ExtendedNum::Num(1), ExtendedNum::PosInf));
-                    let d2 = n1 / n2.glb(&BoundedInterval::new(ExtendedNum::NegInf, ExtendedNum::Num(-1)));
+                    let d1 = n1 / n2.glb(&BoundedIntervalDomain::new(ExtendedNum::Num(1), ExtendedNum::PosInf));
+                    let d2 = n1 / n2.glb(&BoundedIntervalDomain::new(ExtendedNum::NegInf, ExtendedNum::Num(-1)));
                     d1.lub(&d2)
                 }
             }

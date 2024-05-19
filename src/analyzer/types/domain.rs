@@ -3,7 +3,13 @@ use std::fmt::{Display, Debug};
 use std::str::FromStr;
 use crate::types::ast::{Num, Operator};
 
-pub trait AbstractDomain : Debug + Display + PartialOrd + Clone + Sized + From<Num> + FromStr
+pub enum Interval {
+    OpenLeft (Num),
+    OpenRight (Num),
+    Closed (Num,Num),
+}
+
+pub trait AbstractDomain : Debug + Display + PartialOrd + Clone + Sized + From<Num> + From<Interval> + FromStr
                            + Add<Output=Self> + Sub<Output=Self> + Mul<Output=Self> + Div<Output=Self>  {
 
     fn set_config(config_string: Option<String>) -> Result<(), String> {
@@ -48,10 +54,5 @@ pub trait AbstractDomain : Debug + Display + PartialOrd + Clone + Sized + From<N
         self //Trivial narrowing (no narrowing)
     }
 
-    fn all_gte(lb: &Self) -> Self;
-    fn all_lte(ub: &Self) -> Self;
-
-    fn all_gt(lb: &Self) -> Self {Self::all_gte(&(lb.clone() + Self::from(1)))}
-    fn all_lt(ub: &Self) -> Self {Self::all_lte(&(ub.clone() - Self::from(1)))}
 }
 

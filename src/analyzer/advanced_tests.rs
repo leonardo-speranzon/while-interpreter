@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 
 use crate::types::ast::{Aexpr, Bexpr, Operator, Var};
 
-use super::{analyzers::generic_analyzer::GenericAnalyzer, types::{analyzer::StaticAnalyzer, domain::AbstractDomain, state::AbstractState}};
+use super::{analyzers::generic_analyzer::GenericAnalyzer, types::{analyzer::StaticAnalyzer, domain::{AbstractDomain, Interval}, state::AbstractState}};
 
 
 pub fn eval_bexpr_v2<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B) -> B {
@@ -54,7 +54,7 @@ fn eval_bexpr_v2_h<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: 
         Bexpr::True => state,
         Bexpr::False => B::bottom(),
         Bexpr::Equal(a1, a2) => advanced_abstract_tests(a1, a2, state, &D::from(0)),
-        Bexpr::LessEq(a1, a2) => advanced_abstract_tests(a1, a2, state, &D::all_lte(&D::from(0))),
+        Bexpr::LessEq(a1, a2) => advanced_abstract_tests(a1, a2, state, &D::from(Interval::OpenLeft(0))),
         Bexpr::And(b1, b2) => {
             let state1 = eval_bexpr_v2_h(b1, state.clone());
             let state2 = eval_bexpr_v2_h(b2, state);
@@ -66,13 +66,12 @@ fn eval_bexpr_v2_h<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: 
                 Bexpr::False => state,
                 Bexpr::Equal(a1, a2) => {
                   // a1 != a2
-                  let zero = &D::from(0);
-                  let not_zero =   D::all_lt(zero).lub(&D::all_gt(zero));
+                  let not_zero =   D::from(Interval::OpenLeft(-1)).lub(&D::from(Interval::OpenRight(1)));
                   advanced_abstract_tests(a1, a2, state, &not_zero)
                 },
                 Bexpr::LessEq(a1, a2) => 
                     // a1 > a2
-                    advanced_abstract_tests(a1, a2, state, &D::all_gt(&D::from(0))), 
+                    advanced_abstract_tests(a1, a2, state, &D::from(Interval::OpenRight(1))), 
                 Bexpr::Not(b) => eval_bexpr_v2(b, state), // b
                 Bexpr::And(b1, b2) => {
                     //b1 || b2 
