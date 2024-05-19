@@ -42,8 +42,17 @@ pub trait AbstractDomain : Debug + Display + PartialOrd + Clone + Sized + From<N
                 lhs.glb(&Self::abstract_operator(&Operator::Add, res, rhs)),
                 rhs.glb(&Self::abstract_operator(&Operator::Sub, lhs, res)),
             ),
-            Operator::Mul => todo!(),
-            Operator::Div => todo!(),
+            Operator::Mul => (
+                lhs.glb(&Self::abstract_operator(&Operator::Div, res, rhs)),
+                rhs.glb(&Self::abstract_operator(&Operator::Div, res, lhs)),
+            ),
+            Operator::Div => {
+                let s: Self = res.clone() + Self::from(Interval::Closed(-1, 1));
+                (
+                    lhs.glb(&Self::abstract_operator(&Operator::Mul, &s, rhs)),
+                    rhs.glb(&Self::abstract_operator(&Operator::Div, lhs, &s).lub(&Self::from(Interval::Closed(0, 0))))
+                )
+            }
         }
     }
 
