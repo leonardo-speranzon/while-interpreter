@@ -1,7 +1,7 @@
 use std::{cmp::{max, min, Ordering}, fmt::Display, ops::{Add, Div, Mul, Sub}, str::FromStr};
 use iter_tools::Itertools as _;
 
-use crate::{analyzer::types::domain::{self, Interval}, types::ast::{Num, Operator}};
+use crate::{analyzer::types::domain::Interval, types::ast::Num};
 use crate::analyzer::types::domain::AbstractDomain;
 use super::extended_num::ExtendedNum;
 

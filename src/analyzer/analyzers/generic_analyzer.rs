@@ -2,6 +2,7 @@ use crate::analyzer::types::program::{Command, Label};
 use crate::analyzer::types::{program::Program, state::AbstractState};
 use crate::analyzer::types::domain::AbstractDomain;
 use crate::analyzer::types::analyzer::{IterationStrategy, StaticAnalyzer};
+use crate::types::ast::{PostOp, PreOp};
 use std::{collections::HashMap, marker::PhantomData};
 
 use crate::{types::ast::{Aexpr, Bexpr}, analyzer::printers::map_to_str};
@@ -23,22 +24,22 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for GenericAnal
                 let d = D::abstract_operator(op, &n1, &n2);
                 (d, s2)
             }
-            Aexpr::PreInc(x) => {
+            Aexpr::PreOp(PreOp::Inc, x) => {
                 let d = s.get(x) + D::from(1);
                 s.set(x.to_string(), d.clone());
                 (d, s)
             }
-            Aexpr::PreDec(x) => {
+            Aexpr::PreOp(PreOp::Dec, x) => {
                 let d = s.get(x) - D::from(1);
                 s.set(x.to_string(), d.clone());
                 (d, s)
             },
-            Aexpr::PostInc(x) => {
+            Aexpr::PostOp(PostOp::Inc, x) => {
                 let d = s.get(x);
                 s.set(x.to_string(), d.clone() + D::from(1));
                 (d, s)
             },
-            Aexpr::PostDec(x) =>{
+            Aexpr::PostOp(PostOp::Dec, x) =>{
                 let d = s.get(x);
                 s.set(x.to_string(), d.clone() - D::from(1));
                 (d, s)

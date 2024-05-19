@@ -110,10 +110,8 @@ fn eval_aexpr(aexpr: &Aexpr<Num>, state: &State<Num>) -> Result<Num,RuntimeError
                 Operator::Div => return Err(RuntimeError::NotImplemented("Division not implemented".to_string())),
             }
         }
-        Aexpr::PreInc(_) => return Err(RuntimeError::NotImplemented("PreInc not implemented".to_string())),
-        Aexpr::PreDec(_) => return Err(RuntimeError::NotImplemented("PreDec not implemented".to_string())),
-        Aexpr::PostInc(_) => return Err(RuntimeError::NotImplemented("PostInc not implemented".to_string())),
-        Aexpr::PostDec(_) => return Err(RuntimeError::NotImplemented("PostDec not implemented".to_string())),
+        Aexpr::PreOp(_,_) => return Err(RuntimeError::NotImplemented("Prefix operators not implemented".to_string())),
+        Aexpr::PostOp(_,_) => return Err(RuntimeError::NotImplemented("Postfix operators not implemented".to_string())),
     };
     Ok(num)
 }

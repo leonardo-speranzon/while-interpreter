@@ -114,8 +114,7 @@ fn eval_aexpr_tree<D: AbstractDomain, B: AbstractState<D>>(a: &Aexpr<D>, state: 
     match a {
         Aexpr::Num(n) => EvalTree::LeafNum(n.clone()),
         Aexpr::Var(x) => EvalTree::LeafVar(x.clone(), state.get(x)),
-        Aexpr::PreInc(x) | Aexpr::PostInc(x) 
-        | Aexpr::PreDec(x) | Aexpr::PostDec(x) => EvalTree::LeafVar(x.clone(), state.get(x)),
+        Aexpr::PreOp(_, x) | Aexpr::PostOp(_, x) => EvalTree::LeafVar(x.clone(), state.get(x)),
         Aexpr::BinOp(op, a1, a2 ) => {
             let t1 = eval_aexpr_tree(a1, state);
             let t2 = eval_aexpr_tree(a2, state);
@@ -168,7 +167,7 @@ fn eval_pre_b<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B) ->
 }
 fn eval_pre_a<D: AbstractDomain, B: AbstractState<D>>(a: &Aexpr<D>, state: B) -> B {
     match a{
-        Aexpr::PreInc(_) | Aexpr::PreDec(_) => GenericAnalyzer::eval_aexpr(a, state).1,
+        Aexpr::PreOp(_, _) => GenericAnalyzer::eval_aexpr(a, state).1,
         Aexpr::BinOp(_, a1, a2) => {
             let state = eval_pre_a(a1, state);
             let state = eval_pre_a(a2, state);
@@ -197,7 +196,7 @@ fn eval_post_b<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B) -
 }
 fn eval_post_a<D: AbstractDomain, B: AbstractState<D>>(a: &Aexpr<D>, state: B) -> B {
     match a{
-        Aexpr::PostInc(_) | Aexpr::PostDec(_) => GenericAnalyzer::eval_aexpr(a, state).1,
+        Aexpr::PostOp(_, _) => GenericAnalyzer::eval_aexpr(a, state).1,
         Aexpr::BinOp(_, a1, a2) => {
             let state = eval_post_a(a1, state);
             let state = eval_post_a(a2, state);
@@ -255,8 +254,7 @@ fn check_no_dup_a <D: AbstractDomain>(a: &Aexpr<D>) -> Result<(BTreeSet<Var>, BT
     match a {
         Aexpr::Num(_) => Ok((BTreeSet::new(), BTreeSet::new())),
         Aexpr::Var(x) => Ok((BTreeSet::from([x.clone()]), BTreeSet::new())),
-        Aexpr::PreInc(x) | Aexpr::PostInc(x) 
-        | Aexpr::PreDec(x) | Aexpr::PostDec(x) => Ok((BTreeSet::new(), BTreeSet::from([x.clone()]))),
+        Aexpr::PreOp(_, x) | Aexpr::PostOp(_, x) => Ok((BTreeSet::new(), BTreeSet::from([x.clone()]))),
         Aexpr::BinOp(_, a1, a2) => {
             let r1 = check_no_dup_a(a1)?;
             let r2 = check_no_dup_a(a2)?;            

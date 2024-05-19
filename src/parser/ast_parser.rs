@@ -1,4 +1,4 @@
-use crate::types::ast::{self, Num};
+use crate::types::ast::{self, Num, PostOp, PreOp};
 use crate::types::cst;
 
 
@@ -150,10 +150,10 @@ fn parse_factor(cst: &cst::Factor) -> ast::Aexpr<Num> {
     match cst {
         cst::Factor::Num(n) => ast::Aexpr::Num((*n).into()),
         cst::Factor::Var(x) => ast::Aexpr::Var(x.clone()),
-        cst::Factor::PreInc(x) => ast::Aexpr::PreInc(x.clone()),
-        cst::Factor::PostInc(x) => ast::Aexpr::PostInc(x.clone()),
-        cst::Factor::PreDec(x) => ast::Aexpr::PreDec(x.clone()),
-        cst::Factor::PostDec(x) => ast::Aexpr::PostDec(x.clone()),
+        cst::Factor::PreInc(x) => ast::Aexpr::PreOp(PreOp::Inc, x.clone()),
+        cst::Factor::PostInc(x) => ast::Aexpr::PostOp(PostOp::Inc, x.clone()),
+        cst::Factor::PreDec(x) => ast::Aexpr::PreOp(PreOp::Dec,x.clone()),
+        cst::Factor::PostDec(x) => ast::Aexpr::PostOp(PreOp::Dec, x.clone()),
         cst::Factor::Aexpr(a) => parse_aexpr(a),
     }
 }

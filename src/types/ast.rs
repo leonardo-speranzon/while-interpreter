@@ -18,13 +18,18 @@ pub enum Statement<D> {
 }
 
 #[derive(Debug, Clone)]
+pub enum PrePostOp {
+    Inc, Dec
+}
+pub type PreOp = PrePostOp;
+pub type PostOp = PrePostOp;
+
+#[derive(Debug, Clone)]
 pub enum Aexpr<D>  {
     Num  (D),
     Var  (Var),
-    PreInc (Var),
-    PreDec (Var),
-    PostInc (Var),
-    PostDec (Var),
+    PreOp (PreOp, Var),
+    PostOp (PostOp, Var),
     BinOp (Operator, Box<Aexpr<D>>, Box<Aexpr<D>>),
 }
 
