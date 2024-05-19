@@ -7,7 +7,7 @@ use super::{analyzers::generic_analyzer::GenericAnalyzer, types::{analyzer::Stat
 
 pub fn eval_bexpr_v2<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B) -> B {
     if include_critical_ops(&b) {
-        panic!()
+        return eval_bexpr_dumb(b, state)
     }
     let mut state = eval_pre_b(b, state);
 
@@ -23,6 +23,32 @@ pub fn eval_bexpr_v2<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state
     let state = eval_post_b(b, state);
     state
 }
+
+// In the case where advance abstract test cannot be used it fallback to this
+fn eval_bexpr_dumb<D: AbstractDomain, B: AbstractState<D>> (b: &Bexpr<D>, state: B) -> B {
+    match b {
+        Bexpr::True => state,
+        Bexpr::False => B::bottom(),
+        Bexpr::Equal(a1, a2) => {
+            let (d1, state) = GenericAnalyzer::eval_aexpr(a1, state);
+            let (d2, state) = GenericAnalyzer::eval_aexpr(a2, state);
+            if d1.glb(&d2) == D::bottom() {
+                B::bottom()
+            } else {
+                state
+            }
+        },
+        Bexpr::LessEq(_, _) => state,
+        Bexpr::Not(_) => state,
+        Bexpr::And(b1, b2) => {
+            let state = eval_bexpr_dumb(b1, state);
+            let state = eval_bexpr_dumb(b2, state);
+            state // By construction will be either the original state (+ inc/dec) or Bottom
+        },
+    }
+}
+
+
 fn eval_bexpr_v2_h<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B) -> B{
     match b {
         Bexpr::True => state,
