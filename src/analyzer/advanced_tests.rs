@@ -84,7 +84,7 @@ fn eval_bexpr_h<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B, 
 
 fn advanced_abstract_tests<D: AbstractDomain, B: AbstractState<D>>(a1: &Aexpr<D>, a2: &Aexpr<D>, state: B, interval: &D) -> B {
     let a: Aexpr<D> = match a2 as &Aexpr<D> {
-        Aexpr::Num(n) if n == &D::from(0) => (a1 as &Aexpr<D>).clone(),
+        Aexpr::Lit(n) if n == &D::from(0) => (a1 as &Aexpr<D>).clone(),
         _ => Aexpr::BinOp(Operator::Sub, Box::new(a1.clone()), Box::new(a2.clone()))
     };
     let eval_tree = eval_aexpr_tree(&a, &state);
@@ -110,7 +110,7 @@ impl<D:AbstractDomain> EvalTree<D> {
 }
 fn eval_aexpr_tree<D: AbstractDomain, B: AbstractState<D>>(a: &Aexpr<D>, state: &B) -> EvalTree<D> {
     match a {
-        Aexpr::Num(n) => EvalTree::LeafNum(n.clone()),
+        Aexpr::Lit(n) => EvalTree::LeafNum(n.clone()),
         Aexpr::Var(x) => EvalTree::LeafVar(x.clone(), state.get(x)),
         Aexpr::PreOp(_, x) | Aexpr::PostOp(_, x) => EvalTree::LeafVar(x.clone(), state.get(x)),
         Aexpr::BinOp(op, a1, a2 ) => {
@@ -250,7 +250,7 @@ fn check_no_dup_b <D: AbstractDomain>(b: &Bexpr<D>) -> Result<(BTreeSet<Var>, BT
 
 fn check_no_dup_a <D: AbstractDomain>(a: &Aexpr<D>) -> Result<(BTreeSet<Var>, BTreeSet<Var>),Var> {
     match a {
-        Aexpr::Num(_) => Ok((BTreeSet::new(), BTreeSet::new())),
+        Aexpr::Lit(_) => Ok((BTreeSet::new(), BTreeSet::new())),
         Aexpr::Var(x) => Ok((BTreeSet::from([x.clone()]), BTreeSet::new())),
         Aexpr::PreOp(_, x) | Aexpr::PostOp(_, x) => Ok((BTreeSet::new(), BTreeSet::from([x.clone()]))),
         Aexpr::BinOp(_, a1, a2) => {

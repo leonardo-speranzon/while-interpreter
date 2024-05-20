@@ -1,9 +1,7 @@
-use super::ast::Num;
-
 #[derive(Debug,Clone,PartialEq)]
-pub enum Token {
+pub enum Token<N> {
     Id(String),
-    Num(Num),
+    Lit(N),
     True,
     False,
 

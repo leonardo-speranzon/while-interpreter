@@ -94,7 +94,7 @@ fn eval_bexpr(bexpr: &Bexpr<Num>, state: &State<Num>) -> Result<bool,RuntimeErro
 
 fn eval_aexpr(aexpr: &Aexpr<Num>, state: &State<Num>) -> Result<Num,RuntimeError> {
     let num = match aexpr {
-        Aexpr::Num(n) => n.to_owned(),
+        Aexpr::Lit(n) => n.to_owned(),
         Aexpr::Var(x) => 
             match state.get(x) {
                 Some(n) => n.to_owned(),

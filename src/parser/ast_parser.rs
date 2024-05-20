@@ -1,13 +1,13 @@
-use crate::types::ast::{self, Num, PostOp, PreOp};
+use crate::types::ast::{self, NumLiteral, PostOp, PreOp};
 use crate::types::cst;
 
 
 
-pub fn abstract_parse(cst: &cst::Statements) -> ast::Statement<Num> {
+pub fn abstract_parse<N: NumLiteral>(cst: &cst::Statements<N>) -> ast::Statement<N> {
     parse_statements(cst)
 }
 
-fn parse_statements(cst: &cst::Statements) -> ast::Statement<Num> {
+fn parse_statements<N: NumLiteral>(cst: &cst::Statements<N>) -> ast::Statement<N> {
     match cst{
         cst::Statements::Singleton( s) => parse_statement(s),
         cst::Statements::Composition(s1, s2) =>
@@ -18,9 +18,9 @@ fn parse_statements(cst: &cst::Statements) -> ast::Statement<Num> {
     }
 }
 
-fn parse_statement(cst: &cst::Statement) -> ast::Statement<Num> {
+fn parse_statement<N: NumLiteral>(cst: &cst::Statement<N>) -> ast::Statement<N> {
     match cst{
-        cst::Statement::Skip => 
+        cst::Statement::<N>::Skip => 
             ast::Statement::Skip,
         cst::Statement::IfThenElse(b, s1, s2) => 
             ast::Statement::IfThenElse(
@@ -73,7 +73,7 @@ fn parse_statement(cst: &cst::Statement) -> ast::Statement<Num> {
     }
 }
 
-fn parse_assign_statement(cst: &cst::AssignStatements) -> ast::Statement<Num> {
+fn parse_assign_statement<N: NumLiteral>(cst: &cst::AssignStatements<N>) -> ast::Statement<N> {
     match cst {
         cst::AssignStatements::Assign(x, a) => 
             ast::Statement::Assign(x.clone(), Box::new(parse_aexpr(a))),
@@ -106,7 +106,7 @@ fn parse_assign_statement(cst: &cst::AssignStatements) -> ast::Statement<Num> {
             ),
     }
 }
-fn parse_aexpr(cst: &cst::Aexpr) -> ast::Aexpr<Num> {
+fn parse_aexpr<N: NumLiteral>(cst: &cst::Aexpr<N>) -> ast::Aexpr<N> {
     match cst {
         cst::Aexpr::Add(a, t) => 
             ast::Aexpr::BinOp(
@@ -123,13 +123,13 @@ fn parse_aexpr(cst: &cst::Aexpr) -> ast::Aexpr<Num> {
         cst::Aexpr::Term(t) => parse_term(t),
         cst::Aexpr::Opposite(f) => ast::Aexpr::BinOp(
             ast::Operator::Sub,
-            Box::new(ast::Aexpr::Num(0.into())),
+            Box::new(ast::Aexpr::Lit(0.into())),
             Box::new(parse_factor(&f))
         ),
         
     }
 }
-fn parse_term(cst: &cst::Term) -> ast::Aexpr<Num> {
+fn parse_term<N: NumLiteral>(cst: &cst::Term<N>) -> ast::Aexpr<N> {
     match cst {
         cst::Term::Mul(t, f) => 
             ast::Aexpr::BinOp(
@@ -146,9 +146,9 @@ fn parse_term(cst: &cst::Term) -> ast::Aexpr<Num> {
         cst::Term::Factor(f) => parse_factor(f),
     }
 }
-fn parse_factor(cst: &cst::Factor) -> ast::Aexpr<Num> {
+fn parse_factor<N: NumLiteral>(cst: &cst::Factor<N>) -> ast::Aexpr<N> {
     match cst {
-        cst::Factor::Num(n) => ast::Aexpr::Num((*n).into()),
+        cst::Factor::Lit(n) => ast::Aexpr::Lit((*n).into()),
         cst::Factor::Var(x) => ast::Aexpr::Var(x.clone()),
         cst::Factor::PreInc(x) => ast::Aexpr::PreOp(PreOp::Inc, x.clone()),
         cst::Factor::PostInc(x) => ast::Aexpr::PostOp(PostOp::Inc, x.clone()),
@@ -160,7 +160,7 @@ fn parse_factor(cst: &cst::Factor) -> ast::Aexpr<Num> {
 
 
 
-fn parse_bexpr(cst: &cst::Bexpr) -> ast::Bexpr<Num> {
+fn parse_bexpr<N: NumLiteral>(cst: &cst::Bexpr<N>) -> ast::Bexpr<N> {
     match cst {
         cst::Bexpr::And(b, ba) =>
             ast::Bexpr::And(
@@ -178,10 +178,10 @@ fn parse_bexpr(cst: &cst::Bexpr) -> ast::Bexpr<Num> {
             parse_bexpr_atomic(ba),
     }
 }
-fn parse_bexpr_atomic(cst: &cst::BexprAtomic) -> ast::Bexpr<Num> {
+fn parse_bexpr_atomic<N: NumLiteral>(cst: &cst::BexprAtomic<N>) -> ast::Bexpr<N> {
     match cst {
-        cst::BexprAtomic::True => ast::Bexpr::True,
-        cst::BexprAtomic::False => ast::Bexpr::False,
+        cst::BexprAtomic::<N>::True => ast::Bexpr::<N>::True,
+        cst::BexprAtomic::<N>::False => ast::Bexpr::False,
         cst::BexprAtomic::Equal(a1, a2) => 
             ast::Bexpr::Equal(
                 Box::new(parse_aexpr(a1)),

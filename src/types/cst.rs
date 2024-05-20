@@ -1,85 +1,83 @@
-use crate::types::ast::Num;
-
 pub type Var = String;
 
 #[derive(Debug, Clone)]
-pub enum Aexpr  {
-    Add  (Box<Aexpr>,Box<Term>),
-    Sub  (Box<Aexpr>, Box<Term>),
-    Term (Box<Term>),
+pub enum Aexpr<N>  {
+    Add  (Box<Aexpr<N>>,Box<Term<N>>),
+    Sub  (Box<Aexpr<N>>, Box<Term<N>>),
+    Term (Box<Term<N>>),
 
     //syntactic sugars
-    Opposite (Box<Factor>),
+    Opposite (Box<Factor<N>>),
 }
 
 #[derive(Debug, Clone)]
-pub enum Term {
-    Mul   (Box<Term>, Box<Factor>),
-    Div   (Box<Term>, Box<Factor>),
-    Factor(Box<Factor>)
+pub enum Term<N> {
+    Mul   (Box<Term<N>>, Box<Factor<N>>),
+    Div   (Box<Term<N>>, Box<Factor<N>>),
+    Factor(Box<Factor<N>>)
 }
 
 #[derive(Debug, Clone)]
-pub enum Factor {
-    Num  (Num),
+pub enum Factor<N> {
+    Lit  (N),
     Var  (Var),
     PreInc (Var),
     PostInc (Var),
     PreDec (Var),
     PostDec (Var),
-    Aexpr (Box<Aexpr>)
+    Aexpr (Box<Aexpr<N>>)
 }
 
 
 
 #[derive(Debug, Clone)]
-pub enum Bexpr {
-    And    (Box<Bexpr>, Box<BexprAtomic>),
-    Atomic (Box<BexprAtomic>),
+pub enum Bexpr<N> {
+    And    (Box<Bexpr<N>>, Box<BexprAtomic<N>>),
+    Atomic (Box<BexprAtomic<N>>),
 
     //syntactic sugars
-    Or     (Box<Bexpr>, Box<BexprAtomic>),
+    Or     (Box<Bexpr<N>>, Box<BexprAtomic<N>>),
 }
 #[derive(Debug, Clone)]
-pub enum BexprAtomic {
+pub enum BexprAtomic<N> {
     True,
     False,
-    Equal     (Box<Aexpr>, Box<Aexpr>),
-    LessEq    (Box<Aexpr>, Box<Aexpr>),
-    Not    (Box<BexprAtomic>),
-    Bexpr  (Box<Bexpr>),
+    Equal     (Box<Aexpr<N>>, Box<Aexpr<N>>),
+    LessEq    (Box<Aexpr<N>>, Box<Aexpr<N>>),
+    Not    (Box<BexprAtomic<N>>),
+    Bexpr  (Box<Bexpr<N>>),
 
     //syntactic sugars
-    Less      (Box<Aexpr>, Box<Aexpr>),
-    GreaterEq (Box<Aexpr>, Box<Aexpr>),
-    Greater   (Box<Aexpr>, Box<Aexpr>),
-    NotEqual (Box<Aexpr>, Box<Aexpr>),
+    Less      (Box<Aexpr<N>>, Box<Aexpr<N>>),
+    GreaterEq (Box<Aexpr<N>>, Box<Aexpr<N>>),
+    Greater   (Box<Aexpr<N>>, Box<Aexpr<N>>),
+    NotEqual (Box<Aexpr<N>>, Box<Aexpr<N>>),
 }
 
 
 #[derive(Debug, Clone)]
-pub enum Statement {
+pub enum Statement<N> {
     Skip,
-    IfThenElse (Box<Bexpr>, Box<Statement>, Box<Statement>),
-    While      (Box<Bexpr>, Box<Statement>),
-    Block      (Box<Statements>),
-    AssignStm (Box<AssignStatements>),
+    IfThenElse (Box<Bexpr<N>>, Box<Statement<N>>, Box<Statement<N>>),
+    While      (Box<Bexpr<N>>, Box<Statement<N>>),
+    Block      (Box<Statements<N>>),
+    AssignStm (Box<AssignStatements<N>>),
 
     //syntactic sugars
-    RepeatUntil(Box<Statement>, Box<Bexpr>),
-    ForLoop (Var, Box<Aexpr>, Box<Bexpr>,Box<AssignStatements>,Box<Statement>),
+    RepeatUntil(Box<Statement<N>>, Box<Bexpr<N>>),
+    ForLoop (Var, Box<Aexpr<N>>, Box<Bexpr<N>>,Box<AssignStatements<N>>,Box<Statement<N>>),
 }
 
 #[derive(Debug, Clone)]
-pub enum AssignStatements {
-    Assign (Var, Box<Aexpr>),
-    AddAssign (Var, Box<Aexpr>),
-    SubAssign (Var, Box<Aexpr>),
-    MulAssign (Var, Box<Aexpr>),
+pub enum AssignStatements<N> {
+    Assign (Var, Box<Aexpr<N>>),
+    AddAssign (Var, Box<Aexpr<N>>),
+    SubAssign (Var, Box<Aexpr<N>>),
+    MulAssign (Var, Box<Aexpr<N>>),
 }
 
 #[derive(Debug, Clone)]
-pub enum Statements {
-    Composition (Box<Statements>, Box<Statement>),
-    Singleton (Box<Statement>)
+pub enum Statements<N> {
+    Composition (Box<Statements<N>>, Box<Statement<N>>),
+    Singleton (Box<Statement<N>>)
 }

@@ -24,7 +24,7 @@ impl Display for PrePostOp {
 impl<N: Display> Display for Aexpr<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Aexpr::Num(n) => write!(f, "{n}"),
+            Aexpr::Lit(n) => write!(f, "{n}"),
             Aexpr::Var(x) => write!(f, "{x}"),
             Aexpr::PreOp(op, x) => write!(f, "{op}{x}"),
             Aexpr::PostOp(op, x) => write!(f, "{x}{op}"),

@@ -1,6 +1,7 @@
 use std::io::{BufReader, BufRead};
 use std::iter::Peekable;
 use std::fs::File;
+use crate::types::ast::NumLiteral;
 use crate::types::errors::ParserError;
 use crate::types::tokens::Token;
 
@@ -8,20 +9,20 @@ use crate::types::tokens::Token;
 pub type TokenPosition = (usize,usize);
 
 
-pub trait Lexer {
-    fn peek(&self) -> Option<Token>;
-    fn match_next(&mut self, tok: Token)-> Result<(),ParserError>;
-    fn unexpected_error(&self) -> ParserError;
+pub trait Lexer<N> { // N is the num literal type
+    fn peek(&self) -> Option<Token<N>>;
+    fn match_next(&mut self, tok: Token<N>)-> Result<(),ParserError<N>>;
+    fn unexpected_error(&self) -> ParserError<N>;
 }
 
 
 
-pub struct MyLexer<'a> {
+pub struct MyLexer<'a, N> {
     chars: Peekable<Box<dyn Iterator<Item =(usize,usize,char)> + 'a>>,
-    peek: Option<(TokenPosition, Token)>
+    peek: Option<(TokenPosition, Token<N>)>
 }
 
-impl<'a> From<&'a str> for MyLexer<'a>{
+impl<'a, N: NumLiteral> From<&'a str> for MyLexer<'a, N>{
     fn from(value: &'a str) -> Self {
         let it= value.lines()
             .enumerate()
@@ -41,7 +42,7 @@ impl<'a> From<&'a str> for MyLexer<'a>{
         return lex;
     }
 }
-impl<'a> From<File> for MyLexer<'a> {
+impl<'a, N: NumLiteral> From<File> for MyLexer<'a, N> {
     fn from(value: File) -> Self {
         let reader = BufReader::new(value);
         let it = reader.lines().enumerate()
@@ -66,8 +67,8 @@ impl<'a> From<File> for MyLexer<'a> {
 }
 
 
-impl<'a> MyLexer<'a>{
-    fn scan(&mut self) -> Result<Option<(TokenPosition, Token)>, ParserError> {
+impl<'a, N : NumLiteral> MyLexer<'a, N> {
+    fn scan(&mut self) -> Result<Option<(TokenPosition, Token<N>)>, ParserError<N>> {
         while let Some(_) = self.chars.next_if(|(_,_,c)|c.is_ascii_whitespace()){}
         
         // if let Some(_) = self.chars.next_if(|(_,_,c)|c==&'/') {
@@ -84,12 +85,17 @@ impl<'a> MyLexer<'a>{
 
         let start_pos: Option<TokenPosition> = self.chars.peek().map(|(l,c,_)|(l.to_owned(),c.to_owned()));
         let tok = match self.chars.next() {
-            Some((_, _, d@'0'..='9')) => {
+            // FIXME horrible static pattern matching for dynamic literal
+            Some((_, _, d@('0'..='9' |'['))) => {
                 let mut digits = d.to_string();
-                while let Some((_, _, d)) = self.chars.next_if(|(_, _, c)| c.is_ascii_digit()){
+                while let Some((_, _, d)) = self.chars.next_if(|(_, _, c)| c.is_ascii_digit() || c == &',' || c == &']'){
                     digits.push(d)
                 }
-                Token::Num((digits).parse().unwrap())//By construction should be valid                
+                match digits.parse() {
+                    Ok(lit) => Token::Lit(lit),
+                    Err(_) => panic!("Error occurred while parsing a numeric literal")
+                }
+                // Token::Lit((digits).parse().unwrap())//By construction should be valid                
             }
             Some((_, _, c@('a'..='z' | 'A'..='Z' | '_'))) => {
                 let mut word = c.to_string();
@@ -139,13 +145,13 @@ impl<'a> MyLexer<'a>{
 }
 
 
-impl<'a> Lexer for MyLexer<'a> {
+impl<'a,N: NumLiteral> Lexer<N> for MyLexer<'a,N> {
 
-    fn peek(&self) -> Option<Token> {
+    fn peek(&self) -> Option<Token<N>> {
         self.peek.clone().map(|(_,t)|t)
     }
     
-    fn match_next(&mut self, tok: Token)-> Result<(),ParserError> { 
+    fn match_next(&mut self, tok: Token<N>)-> Result<(),ParserError<N>> { 
         match &self.peek {
             Some((pos, tok2)) => {
                 if tok != *tok2 {
@@ -164,7 +170,7 @@ impl<'a> Lexer for MyLexer<'a> {
         self.peek = self.scan()?;
         Ok(())
     }
-    fn unexpected_error(&self) -> ParserError {
+    fn unexpected_error(&self) -> ParserError<N> {
         match &self.peek {
             Some((pos, tok)) => {
                 return ParserError::UnexpectedToken {
@@ -179,7 +185,7 @@ impl<'a> Lexer for MyLexer<'a> {
     
 }
 
-fn match_symbol(s: &str)-> Option<Token>{
+fn match_symbol<N>(s: &str)-> Option<Token<N>>{
     match s{
         ";" => Some(Token::Semicolon),
         "(" => Some(Token::BracketOpen),
@@ -210,7 +216,7 @@ fn match_symbol(s: &str)-> Option<Token>{
     }
 }
 
-fn match_keyword(kw: &str)->Option<Token>{
+fn match_keyword<N>(kw: &str)->Option<Token<N>>{
     match kw {
         "if" => Some(Token::If),
         "then" => Some(Token::Then),

@@ -31,7 +31,7 @@ fn main() {
     std::env::set_var("print-pretty-ast", parser_config.print_pretty_ast.to_string());
 
 
-    let ast: Result<Statement<i128>, ParserError> = match &parser_config.filename {
+    let ast: Result<Statement<i128>, ParserError<_>> = match &parser_config.filename {
         Some(filename) => {
             let f = match File::open(&filename){
                 Ok(f) => f,

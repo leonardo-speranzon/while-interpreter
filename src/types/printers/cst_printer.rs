@@ -4,7 +4,7 @@ use crate::types::cst::{Aexpr, Term, Factor, BexprAtomic, Bexpr, Statement, Assi
 
 
 
-impl Display for Aexpr {
+impl<N: Display> Display for Aexpr<N> {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Aexpr::Add(a,t) => write!(fmt, "({a} + {t})"),
@@ -13,7 +13,7 @@ impl Display for Aexpr {
             Aexpr::Opposite(f) => write!(fmt, "-{f}"),        }
     }
 }
-impl Display for Term {
+impl<N: Display> Display for Term<N> {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Term::Mul(t, f) => write!(fmt, "({t} * {f})"),
@@ -22,10 +22,10 @@ impl Display for Term {
         }
     }
 }
-impl Display for Factor {
+impl<N: Display> Display for Factor<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self{
-            Factor::Num(n) => write!(f, "{n}"),
+            Factor::Lit(n) => write!(f, "{n}"),
             Factor::Var(x) => write!(f, "{x}"),
             Factor::PreInc(x) => write!(f, "++{x}"), 
             Factor::PostInc(x) => write!(f, "{x}++"),
@@ -36,7 +36,7 @@ impl Display for Factor {
     }
 }
 
-impl Display for Bexpr {
+impl<N: Display> Display for Bexpr<N> {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self{
             Bexpr::And(b, ba) => write!(fmt, "({b} and {ba})"),
@@ -45,7 +45,7 @@ impl Display for Bexpr {
         }
     }
 }
-impl Display for BexprAtomic {
+impl<N: Display> Display for BexprAtomic<N> {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             BexprAtomic::True => write!(fmt, "true"),
@@ -62,7 +62,7 @@ impl Display for BexprAtomic {
     }
 }
 
-impl Display for Statement {
+impl<N: Display> Display for Statement<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self{
             Statement::Skip => write!(f, "skip;"),
@@ -93,7 +93,7 @@ impl Display for Statement {
         }
     }
 }
-impl Display for AssignStatements {
+impl<N: Display> Display for AssignStatements<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             AssignStatements::Assign(x, a) => write!(f, "{x}:= {a}"),
@@ -103,7 +103,7 @@ impl Display for AssignStatements {
         }
     }
 }
-impl Display for Statements {
+impl<N: Display> Display for Statements<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self{
             Statements::Composition(stms, stm) => write!(f,"{stms}\n{stm}"),

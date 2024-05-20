@@ -15,7 +15,7 @@ pub fn abstract_program<D:AbstractDomain>(prog: Program<Num>) -> Program<D>{
 }
 fn translate_aexpr<D:AbstractDomain>(a: Aexpr<Num>) -> Aexpr<D>{
     match a {
-        Aexpr::Num(n) => Aexpr::Num(D::from(n)),
+        Aexpr::Lit(n) => Aexpr::Lit(D::from(n)),
         Aexpr::Var(x) => Aexpr::Var(x),
         Aexpr::PreOp(op, x) => Aexpr::PreOp(op, x),
         Aexpr::PostOp(op, x) => Aexpr::PostOp(op, x),

@@ -16,7 +16,7 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for GenericAnal
     
     fn eval_aexpr(a: &Aexpr<D>, mut s: B)-> (D, B) {
         match a {
-            Aexpr::Num(n) => (n.clone(), s),
+            Aexpr::Lit(n) => (n.clone(), s),
             Aexpr::Var(x) => (s.get(x), s),
             Aexpr::BinOp(op, a1, a2 ) => {
                 let (n1, s1) = Self::eval_aexpr(a1, s);
