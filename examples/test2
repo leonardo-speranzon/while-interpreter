@@ -1,9 +1,9 @@
 x:= 5;
 // y:= 1;
-while not (x <= 2 and x > -5) do {
+while 1 == [0,1] and x > -10000 do {
 	// x:= 10 / x;
 	x-=1;
 	x-=1;
 	x-=1;
 }
-if 1==1 then skip; else skip;
+// if 1==1 then skip; else skip;

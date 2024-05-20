@@ -2,12 +2,19 @@ use std::ops::{Add, Div, Mul, Sub};
 use std::fmt::{Display, Debug};
 use std::str::FromStr;
 use crate::types::ast::{Num, Operator};
+use crate::types::lit_interval::LitInterval;
 
 pub enum Interval {
     OpenLeft (Num),
     OpenRight (Num),
     Closed (Num,Num),
 }
+impl From<LitInterval> for Interval {
+    fn from(value: LitInterval) -> Self {
+        Self::Closed(value.0, value.1)
+    }
+}
+
 
 pub trait AbstractDomain : Debug + Display + PartialOrd + Clone + Sized + From<Num> + From<Interval> + FromStr
                            + Add<Output=Self> + Sub<Output=Self> + Mul<Output=Self> + Div<Output=Self>  {

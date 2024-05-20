@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{analyzer::abstract_translator::abstract_program, types::ast::{Aexpr, Bexpr, Num, Statement}};
+use crate::{analyzer::abstract_translator::abstract_program, types::{ast::{Aexpr, Bexpr, Statement}, lit_interval::LitInterval}};
 
 use super::{domain::AbstractDomain, program::{Label, Program}, state::AbstractState};
 
@@ -9,7 +9,7 @@ pub trait StaticAnalyzer<D: AbstractDomain, B: AbstractState<D>> {
     // fn refine_aexpr(a: &Aexpr<D>,s:B, dom: &D) -> B;
     fn eval_bexpr(b: &Bexpr<D>, s: B)-> B;
 
-    fn init(ast: Statement<Num>) -> Program<D> {
+    fn init(ast: Statement<LitInterval>) -> Program<D> {
         let p = Program::from(ast);
         // println!("\nProgram:{:?}\n\n", p);
         let abs_prog = abstract_program(p);

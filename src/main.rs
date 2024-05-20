@@ -2,10 +2,10 @@ use std::{collections::HashMap, fmt::Display, fs::File};
 use analyzer::{domains::{bounded_interval_domain::BoundedIntervalDomain, extended_sign_domain::ExtendedSignDomain, sign_domain::SignDomain}, analyzers::generic_analyzer::GenericAnalyzer, states::hashmap_state::HashMapState, types::{analyzer::StaticAnalyzer, domain::AbstractDomain, program::{Label, Program, ProgramInterface}, state::AbstractState}};
 use config::{AnalyzerConfiguration, Config};
 use interpreter::{types::State, interpreter::eval_statement};
-use parser::{ parse_string, parse_file};
-use types::{ast::{Num, Statement}, errors::{ParserError, RuntimeError}};
+use parser::parse_file;
+use types::{ast::{Num, Statement}, errors::RuntimeError};
 
-use crate::analyzer::printers::print_stm_with_inv;
+use crate::{analyzer::printers::print_stm_with_inv, types::lit_interval::LitInterval};
 
 
 mod types;
@@ -17,10 +17,6 @@ mod config;
 
 
 fn main() {
-
-
-    let code = examples::TEST_REPEAT_UNTIL;
-
     let config = Config::new();
 
     let parser_config = config.get_parser_conf();
@@ -31,38 +27,18 @@ fn main() {
     std::env::set_var("print-pretty-ast", parser_config.print_pretty_ast.to_string());
 
 
-    let ast: Result<Statement<i128>, ParserError<_>> = match &parser_config.filename {
-        Some(filename) => {
-            let f = match File::open(&filename){
-                Ok(f) => f,
-                // Err(ref e) if e.kind() == std::io::ErrorKind:: => break,
-                Err(e) => panic!("Can't read from file: {}, err {}", filename, e),
-            };
-            parse_file(f)
-        },
-        None => parse_string(code.to_owned()),
+    
+    let file = match File::open(&parser_config.filename){
+        Ok(f) => f,
+        Err(e) => panic!("Can't read from file: {}, err {}", parser_config.filename, e),
     };
-
-
-    let ast = match ast {
-        Ok(ast) => ast,
-        Err(err) => {
-            match err {
-                ParserError::UnexpectedEOF => 
-                    println!("Unexpected EOF encountered"),
-                ParserError::UnknownSymbol { pos:(l,c), symbol } =>
-                    println!("Unknown symbol encountered: '{symbol}' at location {l}:{c}"),
-                ParserError::UnexpectedToken { pos:(l,c), expected: None, found } =>
-                    println!("Unexpected token encountered: {:?} at location {l}:{c}", found),
-                ParserError::UnexpectedToken { pos:(l,c), expected: Some(expected), found } =>
-                    println!("Expected token {:?} but found {:?} at location {l}:{c}", expected, found),
-            }
-            return;
-        },
-    };
-
     match config {
         Config::InterpreterConfiguration { config, .. } => {
+            let ast: Statement<Num> = match parse_file(file) {
+                Ok(ast) => ast,
+                Err(err) => panic!("{err}")
+            };
+
             let final_state = eval_statement(
                 &ast,
                 config.init_state.unwrap_or(State::new())
@@ -78,6 +54,11 @@ fn main() {
         Config::AnalyzerConfiguration { config, .. } => {  
             std::env::set_var("print-iterations",config.print_iterations.to_string());
             // println!("{:?}",config);
+
+            let ast: Statement<LitInterval> = match parse_file(file) {
+                Ok(ast) => ast,
+                Err(err) => panic!("{err}")
+            };
 
             let (prog_int, result) = match config.domain {
                 config::Domain::Sign => analyze::<SignDomain>(ast.clone(), config),                
@@ -112,7 +93,7 @@ fn to_boxed_state<D:Display + 'static>(r: HashMap<Label,D>)->HashMap<Label, Box<
     .collect::<HashMap<_,_>>()
 }
 
-fn analyze<D: AbstractDomain + 'static>(ast: Statement<Num>, config: AnalyzerConfiguration) -> (Box<dyn ProgramInterface>, HashMap<Label, Box<dyn Display>>){
+fn analyze<D: AbstractDomain + 'static>(ast: Statement<LitInterval>, config: AnalyzerConfiguration) -> (Box<dyn ProgramInterface>, HashMap<Label, Box<dyn Display>>){
     if let Err(e) = D::set_config(config.domain_config) {
         panic!("Failed configuration :{e}")
     }

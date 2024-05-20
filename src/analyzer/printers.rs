@@ -1,7 +1,7 @@
 use std::{fmt::Display, collections::HashMap};
 use iter_tools::Itertools;
 use regex::Regex;
-use crate::types::ast::{Num, Statement};
+use crate::types::ast::{NumLiteral, Statement};
 
 use super::types::program::Label;
 
@@ -11,7 +11,7 @@ pub fn map_to_str<D: Display>(map: &HashMap<Label,D>) -> String{
     format!("{{{str}}}")
 }
 
-pub fn print_stm_with_inv(stm:Statement<Num>) -> String{
+pub fn print_stm_with_inv<N: NumLiteral>(stm: Statement<N>) -> String{
     let str = stm.to_string();
     let re = Regex::new(r"^ *while( |\()").unwrap();
     let mut inv_num = 0;

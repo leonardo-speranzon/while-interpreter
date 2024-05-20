@@ -7,6 +7,7 @@ mod cst_parser;
 mod ast_parser;
 mod lexer;
 
+#[allow(dead_code)]
 pub fn parse_string<N: NumLiteral>(str: String) -> Result<Statement<N>, ParserError<N>> {
     let lexer = MyLexer::from(str.as_str());
     return parse(lexer)

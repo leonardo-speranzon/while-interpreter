@@ -7,7 +7,7 @@ use crate::{analyzer::types::analyzer::IterationStrategy, interpreter::types::St
 
 #[derive(Debug)]
 pub struct ParserConfig {
-    pub filename: Option<String>,
+    pub filename: String,
     pub print_token: bool,
     pub print_cst: bool,
     pub print_pretty_cst: bool,
@@ -139,7 +139,10 @@ impl Config {
 impl From<&ArgMatches> for ParserConfig {
     fn from(value: &ArgMatches) -> Self {
         ParserConfig{
-            filename: value.get_one::<String>("filename").cloned(),
+            filename: match value.get_one::<String>("filename"){
+                Some(f) => f.clone(),
+                None => unreachable!(),
+            },
             print_token: value.get_flag("token"),
             print_cst: value.get_flag("cst"),
             print_pretty_cst:value.get_flag("pretty-cst"),
