@@ -1,0 +1,103 @@
+\documentclass{article}
+    % % General document formatting
+    \usepackage[margin=1in]{geometry}
+    
+    % % Related to math
+    \usepackage{amsmath,amssymb,amsfonts,amsthm}
+    
+    \newcommand{\lf}{\text{f}\text{f}}
+    \newcommand{\lt}{\text{t}\text{t}}
+
+\begin{document}
+
+\section{Proposition}
+$
+    % TODO add the defintion of F
+    (F^k\bot) s = undef \implies  
+    (F^{k+1}\bot) s  = (F\bot \circ S[\![stm]\!]^k)s  \qquad
+    \forall s \in State, k\ge 1
+$
+
+\subsection{Lemma}
+First we prove a useful lemma: $(F\bot) s = undef \implies  B[\![b]\!]s = tt$
+\\
+\\
+Proof (by contradiction):\\
+Suppose that $(F\bot) s = undef \land B[\![b]\!]s = ff$, then \\
+$$
+\begin{aligned}
+    (F\bot)s & \triangleq cond(B[\![b]\!],\bot \circ S[\![stm]\!],id) s 
+    \\ & = cond(B[\![b]\!],\bot,id) s
+    \\ & \triangleq 
+        \begin{cases}
+            \bot s  & \text{if $B[\![b]\!]s = tt$}\\
+            id\ s & \text{if $B[\![b]\!]s = ff$}
+        \end{cases}
+    \\ & = id\ s \ne undef &\text{CONTRADICTION} &&& \square
+\end{aligned}
+$$
+We can generalize this lemma thank to the monotonicity of $F$:\\
+$(F\bot)^k s = undef \implies B[\![b]\!]s = tt \ \ \ \forall k \ge 1$ 
+
+\subsection{Proposition Proof}
+\paragraph{Base case (k=1)}$\;$\\
+If $(F\bot) s \ne undef$ then the implication is always true.\\
+If $(F\bot) s = undef$ we can prove that the second part is true:
+$$
+\begin{aligned}
+    (F^2\bot) s & \triangleq cond(B[\![b]\!],F\bot \circ S[\![stm]\!],id) s 
+    \\ & \triangleq 
+    \begin{cases}
+        (F\bot \circ S[\![stm]\!])s  & \text{if $B[\![b]\!]s = tt$}\\
+        id\ s & \text{if $B[\![b]\!]s = ff$}
+    \end{cases}
+    \\ & = (F\bot \circ S[\![stm]\!]) s & \text{(by lemma)}
+\end{aligned}
+$$
+
+\paragraph{Inductive hypothesis}$\;$\\
+Inductive hypothesis:
+
+$(F^k\bot) s = undef \implies 
+(F^{k+1}\bot) s  = (F\bot \circ S[\![stm]\!]^k)s$
+\\
+We need to prove it for $k+1$.\\
+\\
+If $(F^{k+1}\bot) s \ne undef$ then the implication is always true.\\
+If $(F^{k+1}\bot) s = undef$ then it satisfy the hypothesis of inductive hypothesis:
+$$
+\begin{aligned}
+    (F^{k+1}\bot) s = undef
+    &\implies (F^{k}\bot) s = undef                             & \text{(by F monotonicity)} \\
+    &\implies (F^{k+1}\bot) s = (F\bot \circ S[\![stm]\!]^k)s   & \text{(by inductive hypothesis)}
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+    (F^{k+2}\bot) s 
+    & \triangleq cond(B[\![b]\!],(F^{k+1}\bot) \circ S[\![stm]\!],id) s \\
+    & \triangleq
+    \begin{cases}
+        ((F^{k+1}\bot) \circ S[\![stm]\!]) s & \text{if $B[\![b]\!]s = tt$}\\
+        id\ s & \text{if $B[\![b]\!]s = ff$}\\
+    \end{cases} \\
+    & = ((F^{k+1}\bot) \circ S[\![stm]\!])s & \text{(by lemma)} \\
+    & \triangleq (F^{k+1}\bot)(S[\![stm]\!]s) \\
+    & = (F\bot \circ S[\![stm]\!]^k)(S[\![stm]\!]s) & \text{(by inductive hypothesis* on $s'=S[\![stm]\!]s$)}\\
+    & \triangleq (F\bot \circ S[\![stm]\!]^k \circ S[\![stm]\!])s \\
+    & \triangleq (F\bot \circ S[\![stm]\!]^{k+1})s & \square\\
+\end{aligned}
+$$
+
+*Proof that $(F^k\bot)(S[\![stm]\!]s) = (F^k\bot)s' = undef $:
+$$
+\begin{aligned}
+    (F^k\bot)(S[\![stm]\!]s)
+    & \triangleq (F^{k+1}\bot) s \\ 
+    & = undef                     & \text{(by the case we are solving)} 
+\end{aligned}
+$$
+
+
+\end{document}

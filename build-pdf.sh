@@ -1,2 +1,2 @@
-pdflatex docs-src/inc-dec-semantic.tex
-rm *.aux *.log
+latexmk -outdir=docs docs-src/*.tex
+latexmk -outdir=docs docs-src/*.tex -c
