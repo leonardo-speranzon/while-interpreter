@@ -10,7 +10,7 @@ pub trait NumLiteral: Debug + Display + FromStr + Copy + From<Num> + PartialEq {
 impl NumLiteral for Num {}
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum Operator{
     Add,Sub,Mul,Div
 }

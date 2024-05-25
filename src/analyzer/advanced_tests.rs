@@ -32,7 +32,7 @@ fn eval_bexpr_dumb<D: AbstractDomain, B: AbstractState<D>> (b: &Bexpr<D>, state:
         Bexpr::Equal(a1, a2) => {
             let (d1, state) = GenericAnalyzer::eval_aexpr(a1, state);
             let (d2, state) = GenericAnalyzer::eval_aexpr(a2, state);
-            if d1.glb(&d2) == D::bottom() {
+            if d1.glb(d2) == D::bottom() {
                 B::bottom()
             } else {
                 state
@@ -57,9 +57,9 @@ fn eval_bexpr_h<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B, 
             let interval = if !negated {
                 D::from(0) // == 0
             } else {
-                D::from(Interval::OpenLeft(-1)).lub(&D::from(Interval::OpenRight(1))) // != 0
+                D::from(Interval::OpenLeft(-1)).lub(D::from(Interval::OpenRight(1))) // != 0
             };
-            advanced_abstract_tests(a1, a2, state, &interval)
+            advanced_abstract_tests(a1, a2, state, interval)
         },
         Bexpr::LessEq(a1, a2) => {
             let interval = if !negated {
@@ -67,7 +67,7 @@ fn eval_bexpr_h<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B, 
             } else {
                 D::from(Interval::OpenRight(1)) // > 0
             };
-            advanced_abstract_tests(a1, a2, state, &interval)
+            advanced_abstract_tests(a1, a2, state, interval)
         },
         Bexpr::And(b1, b2) => {
             let state1 = eval_bexpr_h(b1, state.clone(), negated);
@@ -82,7 +82,7 @@ fn eval_bexpr_h<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B, 
     }
 }
 
-fn advanced_abstract_tests<D: AbstractDomain, B: AbstractState<D>>(a1: &Aexpr<D>, a2: &Aexpr<D>, state: B, interval: &D) -> B {
+fn advanced_abstract_tests<D: AbstractDomain, B: AbstractState<D>>(a1: &Aexpr<D>, a2: &Aexpr<D>, state: B, interval: D) -> B {
     let a: Aexpr<D> = match a2 as &Aexpr<D> {
         Aexpr::Lit(n) if n == &D::from(0) => (a1 as &Aexpr<D>).clone(),
         _ => Aexpr::BinOp(Operator::Sub, Box::new(a1.clone()), Box::new(a2.clone()))
@@ -100,17 +100,17 @@ enum EvalTree<D: AbstractDomain>{
     BinOp(Operator, D, Box<EvalTree<D>>, Box<EvalTree<D>>)
 }
 impl<D:AbstractDomain> EvalTree<D> {
-    fn get_interval(&self)->&D{
+    fn get_interval(&self)-> D{
         match self{
-            EvalTree::LeafNum(d) => d,
-            EvalTree::LeafVar(_, d) => d,
-            EvalTree::BinOp(_, d, _, _) => d,
+            EvalTree::LeafNum(d) => *d,
+            EvalTree::LeafVar(_, d) => *d,
+            EvalTree::BinOp(_, d, _, _) => *d,
         }
     }
 }
 fn eval_aexpr_tree<D: AbstractDomain, B: AbstractState<D>>(a: &Aexpr<D>, state: &B) -> EvalTree<D> {
     match a {
-        Aexpr::Lit(n) => EvalTree::LeafNum(n.clone()),
+        Aexpr::Lit(n) => EvalTree::LeafNum(*n),
         Aexpr::Var(x) => EvalTree::LeafVar(x.clone(), state.get(x)),
         Aexpr::PreOp(_, x) | Aexpr::PostOp(_, x) => EvalTree::LeafVar(x.clone(), state.get(x)),
         Aexpr::BinOp(op, a1, a2 ) => {
@@ -125,7 +125,7 @@ fn eval_aexpr_tree<D: AbstractDomain, B: AbstractState<D>>(a: &Aexpr<D>, state: 
         }
     }    
 }
-fn refine<D: AbstractDomain, B: AbstractState<D>>(tree: &EvalTree<D>, mut state: B, interval: &D) -> B {
+fn refine<D: AbstractDomain, B: AbstractState<D>>(tree: &EvalTree<D>, mut state: B, interval: D) -> B {
     match tree {
         EvalTree::LeafNum(_) => state,
         EvalTree::LeafVar(x, _) => {
@@ -139,8 +139,8 @@ fn refine<D: AbstractDomain, B: AbstractState<D>>(tree: &EvalTree<D>, mut state:
                 rhs.get_interval(), 
                 interval
             );
-            let state = refine(lhs,state,&l_int); 
-            let state = refine(rhs,state,&r_int);
+            let state = refine(lhs,state,l_int); 
+            let state = refine(rhs,state,r_int);
             state
         },
     }

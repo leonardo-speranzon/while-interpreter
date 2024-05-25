@@ -4,7 +4,7 @@ use crate::{analyzer::types::domain::Interval, types::ast::Num};
 use crate::analyzer::types::domain::AbstractDomain;
 
 
-#[derive(Debug,PartialEq,Clone)]
+#[derive(Debug,PartialEq,Clone,Copy)]
 pub struct ExtendedSignDomain{
     positive: bool,
     zero: bool,
@@ -99,7 +99,7 @@ impl AbstractDomain for ExtendedSignDomain{
         ExtendedSignDomain{positive:true, zero: true, negative: true }
     }
 
-    fn lub(&self, other: &Self) -> Self {
+    fn lub(self, other: Self) -> Self {
         ExtendedSignDomain{
             positive: self.positive || other.positive,
             zero: self.zero || other.zero,
@@ -107,7 +107,7 @@ impl AbstractDomain for ExtendedSignDomain{
         }
     }
 
-    fn glb(&self, other: &Self) -> Self {
+    fn glb(self, other: Self) -> Self {
         ExtendedSignDomain{
             positive: self.positive && other.positive,
             zero: self.zero && other.zero,

@@ -16,7 +16,9 @@ impl From<LitInterval> for Interval {
 }
 
 
-pub trait AbstractDomain : Debug + Display + PartialOrd + Clone + Sized + From<Num> + From<Interval> + FromStr
+pub trait AbstractDomain : Debug + Display + Copy + Sized           // Utils
+                           + From<Num> + From<Interval> + FromStr   // Conversions
+                           + PartialOrd                             // Complete lattice
                            + Add<Output=Self> + Sub<Output=Self> + Mul<Output=Self> + Div<Output=Self>  {
 
     fn set_config(config_string: Option<String>) -> Result<(), String> {
@@ -26,45 +28,49 @@ pub trait AbstractDomain : Debug + Display + PartialOrd + Clone + Sized + From<N
         }
     }
     
+    // complete lattice functions
     fn bottom() -> Self;
     fn top() -> Self;
-    fn lub(&self, other: &Self) -> Self;
-    fn glb(&self, other: &Self) -> Self;
+    fn lub(self, other: Self) -> Self;
+    fn glb(self, other: Self) -> Self;
 
-    fn abstract_operator(op: &Operator, lhs: &Self, rhs: &Self) -> Self {
+    // Alias function for arithmetic operators
+    fn abstract_operator(op: &Operator, lhs: Self, rhs: Self) -> Self {
         match op {
-            Operator::Add => lhs.clone() + rhs.clone(),
-            Operator::Sub => lhs.clone() - rhs.clone(),
-            Operator::Mul => lhs.clone() * rhs.clone(),
-            Operator::Div => lhs.clone() / rhs.clone(),
+            Operator::Add => lhs + rhs,
+            Operator::Sub => lhs - rhs,
+            Operator::Mul => lhs * rhs,
+            Operator::Div => lhs / rhs,
         }
     }
-    fn backward_abstract_operator(op: &Operator, lhs: &Self, rhs: &Self, res: &Self) -> (Self, Self){
+
+    // Abstract backward operators used for advanced abstract tests
+    fn backward_abstract_operator(op: &Operator, lhs: Self, rhs: Self, res: Self) -> (Self, Self){
         match op {
             Operator::Add => (
-                lhs.glb(&Self::abstract_operator(&Operator::Sub, res, rhs)),
-                rhs.glb(&Self::abstract_operator(&Operator::Sub, res, lhs)),
+                lhs.glb(res - rhs),
+                rhs.glb(res - lhs),
             ),
             Operator::Sub => (
-                lhs.glb(&Self::abstract_operator(&Operator::Add, res, rhs)),
-                rhs.glb(&Self::abstract_operator(&Operator::Sub, lhs, res)),
+                lhs.glb(res + rhs),
+                rhs.glb(lhs - res),
             ),
             Operator::Mul => (
-                lhs.glb(&Self::abstract_operator(&Operator::Div, res, rhs)),
-                rhs.glb(&Self::abstract_operator(&Operator::Div, res, lhs)),
+                lhs.glb(res / rhs),
+                rhs.glb(res / lhs),
             ),
             Operator::Div => {
-                let s: Self = res.clone() + Self::from(Interval::Closed(-1, 1));
+                let s =  res + Interval::Closed(-1, 1).into();
                 (
-                    lhs.glb(&Self::abstract_operator(&Operator::Mul, &s, rhs)),
-                    rhs.glb(&Self::abstract_operator(&Operator::Div, lhs, &s).lub(&Self::from(Interval::Closed(0, 0))))
+                    lhs.glb(s * rhs),
+                    rhs.glb((lhs / s).lub(Interval::Closed(0, 0).into()))
                 )
             }
         }
     }
 
     fn widening(self, other:Self) -> Self {
-        self.lub(&other) //Trivial widening (possible infinite ascending chain)
+        self.lub(other) //Trivial widening (possible infinite ascending chain)
     }
     fn narrowing(self, _other:Self) -> Self {
         self //Trivial narrowing (no narrowing)

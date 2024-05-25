@@ -22,7 +22,7 @@ impl<D: AbstractDomain> AbstractState<D> for HashMapState<D>  {
             (HashMapState(Some(mut s1)),HashMapState(Some(s2))) => { 
                 s1 = s1.into_iter().filter_map(|(k,v)|{
                     match s2.get(&k) {
-                        Some(d) => Some((k, v.lub(d))),
+                        Some(d) => Some((k, v.lub(d.clone()))),
                         None => None,
                     }
                 }).collect(); 
@@ -39,7 +39,7 @@ impl<D: AbstractDomain> AbstractState<D> for HashMapState<D>  {
             (HashMapState(Some(mut s1)),HashMapState(Some(s2))) => {
                 for (k,v) in s2.into_iter() {
                     let new_v = match s1.get(k) {
-                        Some(d) => v.glb(d),
+                        Some(d) => v.glb(d.clone()),
                         None => v.clone(),
                     };
                     if new_v == D::bottom(){

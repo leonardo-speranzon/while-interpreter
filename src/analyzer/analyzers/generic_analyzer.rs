@@ -16,32 +16,32 @@ impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for GenericAnal
     
     fn eval_aexpr(a: &Aexpr<D>, mut s: B)-> (D, B) {
         match a {
-            Aexpr::Lit(n) => (n.clone(), s),
+            Aexpr::Lit(n) => (*n, s),
             Aexpr::Var(x) => (s.get(x), s),
             Aexpr::BinOp(op, a1, a2 ) => {
                 let (n1, s1) = Self::eval_aexpr(a1, s);
                 let (n2, s2) = Self::eval_aexpr(a2, s1);
-                let d = D::abstract_operator(op, &n1, &n2);
+                let d = D::abstract_operator(op, n1, n2);
                 (d, s2)
             }
             Aexpr::PreOp(PreOp::Inc, x) => {
                 let d = s.get(x) + D::from(1);
-                s.set(x.to_string(), d.clone());
+                s.set(x.to_string(), d);
                 (d, s)
             }
             Aexpr::PreOp(PreOp::Dec, x) => {
                 let d = s.get(x) - D::from(1);
-                s.set(x.to_string(), d.clone());
+                s.set(x.to_string(), d);
                 (d, s)
             },
             Aexpr::PostOp(PostOp::Inc, x) => {
                 let d = s.get(x);
-                s.set(x.to_string(), d.clone() + D::from(1));
+                s.set(x.to_string(), d + D::from(1));
                 (d, s)
             },
             Aexpr::PostOp(PostOp::Dec, x) =>{
                 let d = s.get(x);
-                s.set(x.to_string(), d.clone() - D::from(1));
+                s.set(x.to_string(), d - D::from(1));
                 (d, s)
             },
         }

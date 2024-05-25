@@ -3,7 +3,7 @@ use crate::{analyzer::types::domain::Interval, types::ast::Num};
 use crate::analyzer::types::domain::AbstractDomain;
 
 
-#[derive(Debug,PartialEq,Clone)]
+#[derive(Debug,PartialEq,Clone,Copy)]
 pub enum SignDomain{
     Top,
     Bottom,
@@ -82,20 +82,20 @@ impl AbstractDomain for SignDomain{
         SignDomain::Top
     }
 
-    fn lub(&self, other: &Self) -> Self {
+    fn lub(self, other: Self) -> Self {
         match (self, other) {
-            (SignDomain::Bottom, s2) => s2.clone(),
-            (s1, SignDomain::Bottom) => s1.clone(),
-            (s1 ,s2) if s1 == s2 => s1.clone(),
+            (SignDomain::Bottom, s2) => s2,
+            (s1, SignDomain::Bottom) => s1,
+            (s1 ,s2) if s1 == s2 => s1,
             (_, _) => SignDomain::Top
         }
     }
 
-    fn glb(&self, other: &Self) -> Self {
+    fn glb(self, other: Self) -> Self {
         match (self, other) {
-            (SignDomain::Top, s2) => s2.clone(),
-            (s1, SignDomain::Top) => s1.clone(),
-            (s1 ,s2) if s1 == s2 => s1.clone(),
+            (SignDomain::Top, s2) => s2,
+            (s1, SignDomain::Top) => s1,
+            (s1 ,s2) if s1 == s2 => s1,
             (_, _) => SignDomain::Bottom
         }
     }
@@ -110,8 +110,8 @@ impl Add for SignDomain{
             (SignDomain::Bottom, _) | (_, SignDomain::Bottom)  => SignDomain::Bottom,
             (SignDomain::Top, _) | (_, SignDomain::Top )=> SignDomain::Top,
 
-            (s1 ,s2) if s1 == s2 => s1.clone(),
-            (SignDomain::Zero, s) | (s, SignDomain::Zero) => s.clone(),
+            (s1 ,s2) if s1 == s2 => s1,
+            (SignDomain::Zero, s) | (s, SignDomain::Zero) => s,
             (_, _) => SignDomain::Top
         }
     }
@@ -125,7 +125,7 @@ impl Sub for SignDomain{
 
             (SignDomain::Zero, SignDomain::Negative) => SignDomain::Positive,
             (SignDomain::Zero, SignDomain::Positive) => SignDomain::Negative,
-            (s, SignDomain::Zero) => s.clone(),
+            (s, SignDomain::Zero) => s,
             
             (SignDomain::Negative, SignDomain::Negative) => SignDomain::Top,
             (SignDomain::Positive, SignDomain::Positive) => SignDomain::Top,

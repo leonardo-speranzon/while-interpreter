@@ -146,25 +146,25 @@ impl AbstractDomain for BoundedIntervalDomain{
     fn bottom() -> Self { BoundedIntervalDomain::Bottom }
     fn top() -> Self { BoundedIntervalDomain::Top }
 
-    fn lub(&self, other: &Self) -> Self {
+    fn lub(self, other: Self) -> Self {
         match (self,other) {
             (BoundedIntervalDomain::Top,_) | (_, BoundedIntervalDomain::Top) => BoundedIntervalDomain::Top,
-            (BoundedIntervalDomain::Bottom, i) | (i, BoundedIntervalDomain::Bottom) => i.clone(),
+            (BoundedIntervalDomain::Bottom, i) | (i, BoundedIntervalDomain::Bottom) => i,
             (BoundedIntervalDomain::Range(a, b), BoundedIntervalDomain::Range(c, d)) =>{
-                let lower = min(a,c).clone();
-                let upper = max(b,d).clone();
+                let lower = min(a,c);
+                let upper = max(b,d);
                 BoundedIntervalDomain::new(lower, upper)
             }
         }
     }
 
-    fn glb(&self, other: &Self) -> Self {
+    fn glb(self, other: Self) -> Self {
         match (self,other) {
             (BoundedIntervalDomain::Bottom,_) | (_, BoundedIntervalDomain::Bottom) => BoundedIntervalDomain::Bottom,
-            (BoundedIntervalDomain::Top, i) | (i, BoundedIntervalDomain::Top) => i.clone(),
+            (BoundedIntervalDomain::Top, i) | (i, BoundedIntervalDomain::Top) => i,
             (BoundedIntervalDomain::Range(a, b), BoundedIntervalDomain::Range(c, d)) =>{
-                let lower = max(a,c).clone();
-                let upper = min(b,d).clone();
+                let lower = max(a,c);
+                let upper = min(b,d);
                 BoundedIntervalDomain::new(lower, upper)
             }
         }
@@ -220,8 +220,8 @@ impl Add for BoundedIntervalDomain{
             (BoundedIntervalDomain::Bottom,_) | (_, BoundedIntervalDomain::Bottom) => BoundedIntervalDomain::Bottom,
             (BoundedIntervalDomain::Top, _) | (_, BoundedIntervalDomain::Top) => BoundedIntervalDomain::Top,
             (BoundedIntervalDomain::Range(a, b), BoundedIntervalDomain::Range(c, d)) => {
-                let lower = a.clone()+c.clone();
-                let upper = b.clone()+d.clone();
+                let lower = a + c;
+                let upper = b + d;
                 BoundedIntervalDomain::new(lower, upper)
             }
         }
@@ -234,8 +234,8 @@ impl Sub for BoundedIntervalDomain{
             (BoundedIntervalDomain::Bottom,_) | (_, BoundedIntervalDomain::Bottom) => BoundedIntervalDomain::Bottom,
             (BoundedIntervalDomain::Top, _) | (_, BoundedIntervalDomain::Top) => BoundedIntervalDomain::Top,
             (BoundedIntervalDomain::Range(a, b), BoundedIntervalDomain::Range(c, d)) => {
-                let lower = a.clone()-d.clone();
-                let upper = b.clone()-c.clone();
+                let lower = a - d;
+                let upper = b - c;
                 BoundedIntervalDomain::new(lower, upper)
             }
         }
@@ -256,9 +256,9 @@ impl Mul for BoundedIntervalDomain{
             },
             (BoundedIntervalDomain::Range(a, b), BoundedIntervalDomain::Range(c, d)) => {
                 let points = [a*c, a*d, b*c, b*d];
-                let lower = points.iter().min().unwrap().clone();               
-                let upper = points.iter().max().unwrap().clone();         
-                BoundedIntervalDomain::new(lower, upper)
+                let lower = points.iter().min().unwrap();               
+                let upper = points.iter().max().unwrap();         
+                BoundedIntervalDomain::new(*lower, *upper)
             }
         }
     }
@@ -292,9 +292,9 @@ impl Div for BoundedIntervalDomain{
                 }else if d <= ExtendedNum::Num(-1) {
                     BoundedIntervalDomain::new(min(b/c, b/d), max(a/c, a/d))
                 } else {
-                    let d1 = n1 / n2.glb(&BoundedIntervalDomain::new(ExtendedNum::Num(1), ExtendedNum::PosInf));
-                    let d2 = n1 / n2.glb(&BoundedIntervalDomain::new(ExtendedNum::NegInf, ExtendedNum::Num(-1)));
-                    d1.lub(&d2)
+                    let d1 = n1 / n2.glb(BoundedIntervalDomain::new(ExtendedNum::Num(1), ExtendedNum::PosInf));
+                    let d2 = n1 / n2.glb(BoundedIntervalDomain::new(ExtendedNum::NegInf, ExtendedNum::Num(-1)));
+                    d1.lub(d2)
                 }
             }
         }

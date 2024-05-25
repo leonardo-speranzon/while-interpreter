@@ -102,25 +102,25 @@ impl AbstractDomain for IntervalDomain{
     fn bottom() -> Self { IntervalDomain::Bottom }
     fn top() -> Self { IntervalDomain::Top }
 
-    fn lub(&self, other: &Self) -> Self {
+    fn lub(self, other: Self) -> Self {
         match (self,other) {
             (IntervalDomain::Top,_) | (_, IntervalDomain::Top) => IntervalDomain::Top,
-            (IntervalDomain::Bottom, i) | (i, IntervalDomain::Bottom) => i.clone(),
+            (IntervalDomain::Bottom, i) | (i, IntervalDomain::Bottom) => i,
             (IntervalDomain::Range(a, b), IntervalDomain::Range(c, d)) =>{
-                let lower = min(a,c).clone();
-                let upper = max(b,d).clone();
+                let lower = min(a,c);
+                let upper = max(b,d);
                 IntervalDomain::new(lower, upper)
             }
         }
     }
 
-    fn glb(&self, other: &Self) -> Self {
+    fn glb(self, other: Self) -> Self {
         match (self,other) {
             (IntervalDomain::Bottom,_) | (_, IntervalDomain::Bottom) => IntervalDomain::Bottom,
-            (IntervalDomain::Top, i) | (i, IntervalDomain::Top) => i.clone(),
+            (IntervalDomain::Top, i) | (i, IntervalDomain::Top) => i,
             (IntervalDomain::Range(a, b), IntervalDomain::Range(c, d)) =>{
-                let lower = max(a,c).clone();
-                let upper = min(b,d).clone();
+                let lower = max(a,c);
+                let upper = min(b,d);
                 IntervalDomain::new(lower, upper)
             }
         }
@@ -150,8 +150,8 @@ impl Add for IntervalDomain{
             (IntervalDomain::Bottom,_) | (_, IntervalDomain::Bottom) => IntervalDomain::Bottom,
             (IntervalDomain::Top, _) | (_, IntervalDomain::Top) => IntervalDomain::Top,
             (IntervalDomain::Range(a, b), IntervalDomain::Range(c, d)) => {
-                let lower = a.clone()+c.clone();
-                let upper = b.clone()+d.clone();
+                let lower = a + c;
+                let upper = b + d;
                 IntervalDomain::new(lower, upper)
             }
         }
@@ -164,8 +164,8 @@ impl Sub for IntervalDomain{
             (IntervalDomain::Bottom,_) | (_, IntervalDomain::Bottom) => IntervalDomain::Bottom,
             (IntervalDomain::Top, _) | (_, IntervalDomain::Top) => IntervalDomain::Top,
             (IntervalDomain::Range(a, b), IntervalDomain::Range(c, d)) => {
-                let lower = a.clone()-d.clone();
-                let upper = b.clone()-c.clone();
+                let lower = a - d;
+                let upper = b - c;
                 IntervalDomain::new(lower, upper)
             }
         }
@@ -186,9 +186,9 @@ impl Mul for IntervalDomain{
             },
             (IntervalDomain::Range(a, b), IntervalDomain::Range(c, d)) => {
                 let points = [a*c, a*d, b*c, b*d];
-                let lower = points.iter().min().unwrap().clone();               
-                let upper = points.iter().max().unwrap().clone();         
-                IntervalDomain::new(lower, upper)
+                let lower = points.iter().min().unwrap();               
+                let upper = points.iter().max().unwrap();         
+                IntervalDomain::new(*lower, *upper)
             }
         }
     }
@@ -222,9 +222,9 @@ impl Div for IntervalDomain{
                 }else if d <= ExtendedNum::Num(-1) {
                     IntervalDomain::new(min(b/c, b/d), max(a/c, a/d))
                 } else {
-                    let d1 = n1 / n2.glb(&IntervalDomain::new(ExtendedNum::Num(1), ExtendedNum::PosInf));
-                    let d2 = n1 / n2.glb(&IntervalDomain::new(ExtendedNum::NegInf, ExtendedNum::Num(-1)));
-                    d1.lub(&d2)
+                    let d1 = n1 / n2.glb(IntervalDomain::new(ExtendedNum::Num(1), ExtendedNum::PosInf));
+                    let d2 = n1 / n2.glb(IntervalDomain::new(ExtendedNum::NegInf, ExtendedNum::Num(-1)));
+                    d1.lub(d2)
                 }
             }
         }
