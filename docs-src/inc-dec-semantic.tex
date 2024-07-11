@@ -15,7 +15,7 @@ and so we should change from $\mathcal{A}$ to $\mathcal{A}'$:
 $$ 
     \begin{aligned}
         \mathcal{A} &= Aexpr \rightarrow State \rightarrow N \\
-        \mathcal{A}'&= Aexpr \rightarrow State \rightarrow \langle State, N\rangle
+        \mathcal{A}'&= Aexpr \rightarrow State \hookrightarrow \langle State, N\rangle
     \end{aligned}
 $$
 
@@ -33,7 +33,8 @@ $$
 $$
 \frac
     {\mathcal{A}'[a_1]s = \langle s', n_1\rangle \quad\quad \mathcal{A}'[a_1]s' = \langle s'', n_2\rangle}
-    {\mathcal{A}'[a_1 \star a_2]s = \langle s'', n_1 \star n_2\rangle}
+    {\mathcal{A}'[a_1 \star a_2]s = \langle s'', n_1 \star n_2\rangle} 
+    \qquad \mathrm{where}\quad  \lnot(\star =  /\ \land\  n_2 = 0)
 $$
 
 \vspace{1em}
@@ -44,7 +45,7 @@ The same changes affect the boolean expression evaluation:
 $$ 
     \begin{aligned}
         \mathcal{B} &= Bexpr \rightarrow State \rightarrow T \\
-        \mathcal{B}'&= Bexpr \rightarrow State \rightarrow \langle State, T\rangle
+        \mathcal{B}'&= Bexpr \rightarrow State \hookrightarrow \langle State, T\rangle
     \end{aligned}
 $$
 
@@ -67,13 +68,10 @@ $$
         {\mathcal{B}'[b]s = \langle s', \lt\rangle}
         {\mathcal{B}'[\lnot b]s = \langle s', \lf \rangle} \\
     \texttt{(and-1)} \quad & \frac
-        {\mathcal{B}'[b_1]s = \langle s', \lt\rangle \quad\quad \mathcal{B}'[b_2]s' = \langle s'', \lt\rangle}
-        {\mathcal{B}'[b_1 \land b_2]s = \langle s'', \lt \rangle} \\
+        {\mathcal{B}'[b_1]s = \langle s', \lt\rangle \quad\quad \mathcal{B}'[b_2]s' = \langle s'', b\rangle}
+        {\mathcal{B}'[b_1 \land b_2]s = \langle s'', b \rangle} \\
     \texttt{(and-2)} \quad & \frac
         {\mathcal{B}'[b_1]s = \langle s',\lf\rangle \quad\quad \mathcal{B}'[b_2]s' = \langle s'', \cdot\rangle}
-        {\mathcal{B}'[b_1 \land b_2]s = \langle s'', \lf \rangle} \\
-    \texttt{(and-3)} \quad & \frac
-        {\mathcal{B}'[b_1]s = \langle s', \cdot\rangle \quad\quad \mathcal{B}'[b_2]s' = \langle s'', \lf\rangle}
         {\mathcal{B}'[b_1 \land b_2]s = \langle s'', \lf \rangle} \\
 \end{aligned}
 $$
