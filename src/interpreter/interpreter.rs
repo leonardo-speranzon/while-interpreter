@@ -20,21 +20,8 @@ pub fn eval_statement(statement: &Statement<Num>, mut state: State<Num>) -> Resu
             } else {
                 eval_statement(&stm2, state)
             }
-            // cond(
-            //     b,
-            //     &boh(stm1),
-            //     &boh(stm2)
-            // )(state),
         },
         Statement::While(b, stm) => {
-            // let id = &|s: State| Ok(Some(s));
-            // let bottom = &|_| Ok(None);
-            // let guard = |s: &State| eval_bexpr(b, s);
-            // let f_bottom = cond(
-            //     &guard,
-            //     bottom,
-            //     id
-            // );
             let f_bottom = |s: State<Num>|{
                 if eval_bexpr(b, &s)? {
                     Ok(None)
@@ -60,22 +47,6 @@ pub fn eval_statement(statement: &Statement<Num>, mut state: State<Num>) -> Resu
 }
 
 
-// fn boh(statement: &Statement)->impl Fn(State)->State{
-//     let stm_clone=statement.clone();
-//     move |state:State|eval_statement(&stm_clone, state)
-// }
-// fn cond<'a, T>(b: &'a dyn Fn(&State)->Result<bool,RuntimeError>, g1: &'a dyn Fn(State)->Result<T,RuntimeError>, g2: &'a dyn Fn(State)->Result<T,RuntimeError>) -> impl Fn(State) -> Result<T,RuntimeError> + 'a  {
-//     move |state: State| {
-//         if b(&state)? {
-//             g1(state)
-//         } else {
-//             g2(state)
-//         }
-//     }   
-// }
-
-
-
 fn eval_bexpr(bexpr: &Bexpr<Num>, state: &State<Num>) -> Result<bool,RuntimeError> {
     let b = match bexpr {
         Bexpr::True => true,
@@ -94,10 +65,10 @@ fn eval_bexpr(bexpr: &Bexpr<Num>, state: &State<Num>) -> Result<bool,RuntimeErro
 
 fn eval_aexpr(aexpr: &Aexpr<Num>, state: &State<Num>) -> Result<Num,RuntimeError> {
     let num = match aexpr {
-        Aexpr::Lit(n) => n.to_owned(),
+        Aexpr::Lit(n) => *n,
         Aexpr::Var(x) => 
             match state.get(x) {
-                Some(n) => n.to_owned(),
+                Some(n) => *n,
                 None => return Err(RuntimeError::VariableNotInitialized(x.clone())),
             }
         Aexpr::BinOp(op, a1, a2) =>{
@@ -115,43 +86,3 @@ fn eval_aexpr(aexpr: &Aexpr<Num>, state: &State<Num>) -> Result<Num,RuntimeError
     };
     Ok(num)
 }
-
-
-
-// #[allow(dead_code)]
-// pub fn config_transition(config: Configuration) -> Configuration {
-//     if let Configuration::NonTerminal(stm, mut state) = config {
-//         let new_conf = match *stm {
-//             Statement::Assign(x, aexp) => {
-//                 let num = eval_aexpr(&aexp, &state);
-//                 state.insert(x.to_string(), num);
-//                 Configuration::Terminal(state)
-//             },
-//             Statement::Skip => Configuration::Terminal(state),
-//             Statement::Compose(s1, s2) => {
-//                 match config_transition(Configuration::NonTerminal(s1, state)){
-//                     Configuration::Terminal(state) =>
-//                         Configuration::NonTerminal(s2, state),
-//                     Configuration::NonTerminal(s1, state) =>
-//                         Configuration::NonTerminal(Statement::Compose(s1, s2).into(), state),
-//                 }
-//             },
-//             Statement::IfThenElse(b, s1, s2) =>
-//                 if eval_bexpr(&b, &state) {
-//                     Configuration::NonTerminal(s1, state)
-//                 } else {
-//                     Configuration::NonTerminal(s2, state)
-//                 },
-//             Statement::While(b, s) => {
-//                 Configuration::NonTerminal(Statement::IfThenElse(
-//                     b.clone(),
-//                     Statement::Compose(s.clone(), Statement::While(b, s).into()).into(),
-//                     Statement::Skip.into()
-//                 ).into(), state)
-//             }
-//         };
-//         return new_conf;
-//     }else {
-//         panic!()
-//     }
-// }
