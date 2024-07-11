@@ -117,7 +117,7 @@ impl<D: AbstractDomain, B: AbstractState<D>> GenericAnalyzer<D,B>{
         let mut all_states: HashMap<Label, B> = HashMap::new();
         for i in 0..=(prog.labels_num-1) {
             let arcs = prog.get_entering_arcs(i);
-            let mut new_state = if i == prog.entry{
+            let mut new_state = if i == 0{
                 init_state.clone()
             }else{
                 B::bottom()

@@ -4,8 +4,8 @@ use crate::types::ast::{Statement, Aexpr, Var, Bexpr};
 
 #[derive(Debug, Clone)]
 pub struct Program<D: Clone> {
+    // entry is the first, exit the last
     pub labels_num: Label,
-    pub entry: Label, // always first index
     pub widening_points: Vec<Label>,
     pub arcs: Vec<Arc<D>>
 }
@@ -28,7 +28,7 @@ impl<D: Clone> Program<D>{
             .unwrap_or(&0);
         Program {
             labels_num: max_label + 1,
-            entry: 0,
+            // entry: 0,
             widening_points,
             arcs,
         }
