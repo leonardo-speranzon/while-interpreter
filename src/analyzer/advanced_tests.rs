@@ -54,20 +54,20 @@ fn eval_bexpr_h<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B, 
         Bexpr::True => state,
         Bexpr::False => B::bottom(),
         Bexpr::Equal(a1, a2) => {
-            let interval = if !negated {
+            let domain = if !negated {
                 D::from(0) // == 0
             } else {
                 D::from(Interval::OpenLeft(-1)).lub(D::from(Interval::OpenRight(1))) // != 0
             };
-            advanced_abstract_tests(a1, a2, state, interval)
+            advanced_abstract_tests(a1, a2, state, domain)
         },
         Bexpr::LessEq(a1, a2) => {
-            let interval = if !negated {
+            let domain = if !negated {
                 D::from(Interval::OpenLeft(0)) // <= 0
             } else {
                 D::from(Interval::OpenRight(1)) // > 0
             };
-            advanced_abstract_tests(a1, a2, state, interval)
+            advanced_abstract_tests(a1, a2, state, domain)
         },
         Bexpr::And(b1, b2) => {
             let state1 = eval_bexpr_h(b1, state.clone(), negated);
@@ -82,15 +82,19 @@ fn eval_bexpr_h<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B, 
     }
 }
 
-fn advanced_abstract_tests<D: AbstractDomain, B: AbstractState<D>>(a1: &Aexpr<D>, a2: &Aexpr<D>, state: B, interval: D) -> B {
-    let a: Aexpr<D> = match a2 as &Aexpr<D> {
-        Aexpr::Lit(n) if n == &D::from(0) => (a1 as &Aexpr<D>).clone(),
-        _ => Aexpr::BinOp(Operator::Sub, Box::new(a1.clone()), Box::new(a2.clone()))
-    };
+// Advanced test on: a1 - a2 \in domain
+fn advanced_abstract_tests<D: AbstractDomain, B: AbstractState<D>>(a1: &Aexpr<D>, a2: &Aexpr<D>, state: B, domain: D) -> B {
+    // This logic worked only because in all the implemented abstract domains
+    // the representation of zero is optimal but is not strictly needed  in these
+    // specific cases
+    // let a: Aexpr<D> = match a2 as &Aexpr<D> {
+    //     Aexpr::Lit(n) if n == &D::from(0) => (a1 as &Aexpr<D>).clone(),
+    //     _ => Aexpr::BinOp(Operator::Sub, Box::new(a1.clone()), Box::new(a2.clone()))
+    // };
+    let a = Aexpr::BinOp(Operator::Sub, Box::new(a1.clone()), Box::new(a2.clone()));
     let eval_tree = eval_aexpr_tree(&a, &state);
-    let state = refine(&eval_tree, state, interval);
+    let state: B = refine(&eval_tree, state, domain);
     state
-    
 }
 
 
@@ -100,7 +104,7 @@ enum EvalTree<D: AbstractDomain>{
     BinOp(Operator, D, Box<EvalTree<D>>, Box<EvalTree<D>>)
 }
 impl<D:AbstractDomain> EvalTree<D> {
-    fn get_interval(&self)-> D{
+    fn get_domain(&self)-> D{
         match self{
             EvalTree::LeafNum(d) => *d,
             EvalTree::LeafVar(_, d) => *d,
@@ -118,29 +122,29 @@ fn eval_aexpr_tree<D: AbstractDomain, B: AbstractState<D>>(a: &Aexpr<D>, state: 
             let t2 = eval_aexpr_tree(a2, state);
             EvalTree::BinOp(
                 op.clone(), 
-                D::abstract_operator(op, t1.get_interval(), t2.get_interval()),
+                D::abstract_operator(op, t1.get_domain(), t2.get_domain()),
                 Box::new(t1),
                 Box::new(t2)
             )        
         }
     }    
 }
-fn refine<D: AbstractDomain, B: AbstractState<D>>(tree: &EvalTree<D>, mut state: B, interval: D) -> B {
+fn refine<D: AbstractDomain, B: AbstractState<D>>(tree: &EvalTree<D>, mut state: B, target_domain: D) -> B {
     match tree {
         EvalTree::LeafNum(_) => state,
         EvalTree::LeafVar(x, _) => {
-            state.set(x.clone(), state.get(x).glb(interval));
+            state.set(x.clone(), state.get(x).glb(target_domain));
             state
         }
         EvalTree::BinOp(op, _, lhs, rhs) => {
-            let (l_int,r_int) = D::backward_abstract_operator(
+            let (l_dom,r_dom) = D::backward_abstract_operator(
                 op,
-                lhs.get_interval(), 
-                rhs.get_interval(), 
-                interval
+                lhs.get_domain(), 
+                rhs.get_domain(), 
+                target_domain
             );
-            let state = refine(lhs,state,l_int); 
-            let state = refine(rhs,state,r_int);
+            let state = refine(lhs,state,l_dom); 
+            let state = refine(rhs,state,r_dom);
             state
         },
     }
