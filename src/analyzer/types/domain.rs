@@ -23,8 +23,8 @@ pub trait AbstractDomain : Debug + Display + Copy + Sized           // Utils
 
     fn set_config(config_string: Option<String>) -> Result<(), String> {
         match config_string {
-            None => Err(String::from("This domain does not support configuration")),
-            Some(_) => Ok(())
+            Some(_) => Err(String::from("This domain does not support configuration")),
+            None    => Ok(())
         }
     }
     
@@ -36,12 +36,14 @@ pub trait AbstractDomain : Debug + Display + Copy + Sized           // Utils
 
     // Alias function for arithmetic operators
     fn abstract_operator(op: &Operator, lhs: Self, rhs: Self) -> Self {
-        match op {
+        let res = match op {
             Operator::Add => lhs + rhs,
             Operator::Sub => lhs - rhs,
             Operator::Mul => lhs * rhs,
             Operator::Div => lhs / rhs,
-        }
+        };
+        // println!("{lhs} {op} {rhs} = {res}");
+        res
     }
 
     // Abstract backward operators used for advanced abstract tests

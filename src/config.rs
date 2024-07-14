@@ -24,11 +24,12 @@ pub struct InterpreterConfiguration {
 pub enum Domain{
     Sign,
     ExtendedSign,
-    BoundedInterval
+    BoundedInterval,
+    Congruence
 }
 impl ValueEnum for Domain {
     fn value_variants<'a>() -> &'a [Self] {
-        &[Self::Sign, Self::ExtendedSign, Self::BoundedInterval]
+        &[Self::Sign, Self::ExtendedSign, Self::BoundedInterval, Self::Congruence]
     }
 
     fn to_possible_value(&self) -> Option<PossibleValue> {
@@ -36,6 +37,7 @@ impl ValueEnum for Domain {
             Domain::Sign => Some(PossibleValue::new("sign")),
             Domain::ExtendedSign => Some(PossibleValue::new("extended-sign").alias("sign+")),
             Domain::BoundedInterval => Some(PossibleValue::new("bounded-interval")),
+            Domain::Congruence => Some(PossibleValue::new("cong")),
         }
     }
 }

@@ -5,6 +5,7 @@ pub mod domains{
     pub mod extended_num;
     pub mod bounded_interval_domain;
     pub mod extended_sign_domain;
+    pub mod congruence_domain;
 }
 pub mod analyzers {
     pub mod generic_analyzer;

@@ -12,13 +12,10 @@ pub fn eval_bexpr<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B
     let mut state = eval_pre_b(b, state);
 
     let mut new_state = eval_bexpr_h(b, state.clone(), false);
-    // let  mut i = 1;
     while &new_state != &state {
         state = state.glb(&new_state);
         new_state = eval_bexpr_h(b, state.clone(), false);
-        // i+=1;
     }
-    // println!("Computed test in {} iterations", i);
 
     let state = eval_post_b(b, state);
     state
@@ -98,6 +95,7 @@ fn advanced_abstract_tests<D: AbstractDomain, B: AbstractState<D>>(a1: &Aexpr<D>
 }
 
 
+#[derive(Debug)]
 enum EvalTree<D: AbstractDomain>{
     LeafNum(D),
     LeafVar(String,D),

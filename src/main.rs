@@ -1,5 +1,5 @@
 use std::{collections::HashMap, fmt::Display, fs::File};
-use analyzer::{domains::{bounded_interval_domain::BoundedIntervalDomain, extended_sign_domain::ExtendedSignDomain, sign_domain::SignDomain}, analyzers::generic_analyzer::GenericAnalyzer, states::hashmap_state::HashMapState, types::{analyzer::StaticAnalyzer, domain::AbstractDomain, program::{Label, Program, ProgramInterface}, state::AbstractState}};
+use analyzer::{analyzers::generic_analyzer::GenericAnalyzer, domains::{bounded_interval_domain::BoundedIntervalDomain, congruence_domain::CongruenceDomain, extended_sign_domain::ExtendedSignDomain, sign_domain::SignDomain}, states::hashmap_state::HashMapState, types::{analyzer::StaticAnalyzer, domain::AbstractDomain, program::{Label, Program, ProgramInterface}, state::AbstractState}};
 use config::{AnalyzerConfiguration, Config};
 use interpreter::{types::State, interpreter::eval_statement};
 use parser::parse_file;
@@ -64,6 +64,7 @@ fn main() {
                 config::Domain::Sign => analyze::<SignDomain>(ast.clone(), config),                
                 config::Domain::ExtendedSign => analyze::<ExtendedSignDomain>(ast.clone(), config),
                 config::Domain::BoundedInterval => analyze::<BoundedIntervalDomain>(ast.clone(), config),
+                config::Domain::Congruence => analyze::<CongruenceDomain>(ast.clone(), config),
             };
             println!("╔═════════════════╗");
             println!("║ Analyzer Result ║");
