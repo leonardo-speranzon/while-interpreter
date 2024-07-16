@@ -5,7 +5,7 @@ use super::types::State;
 pub fn eval_statement(statement: &Statement<Num>, mut state: State<Num>) -> Result<State<Num>, RuntimeError> {
     match statement {
         Statement::Assign(x, aexpr) => {
-            state.insert(x.to_string(), eval_aexpr(aexpr, &state)?);
+            state.insert(x.clone(), eval_aexpr(aexpr, &state)?);
             Ok(state)
         },
         Statement::Skip => Ok(state),

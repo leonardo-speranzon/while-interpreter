@@ -1,6 +1,6 @@
 use std::fmt::{Display, Debug};
 
-pub trait AbstractState<D>: Debug + Display + PartialEq + Clone {
+pub trait AbstractState<D>: Debug + Display + PartialOrd + Clone {
     fn bottom() -> Self;
     fn top() -> Self;
     fn lub(self, other: &Self) -> Self;

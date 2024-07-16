@@ -16,9 +16,9 @@ impl From<LitInterval> for Interval {
 }
 
 
-pub trait AbstractDomain : Debug + Display + Copy + Sized           // Utils
-                           + From<Num> + From<Interval> + FromStr   // Conversions
-                           + PartialOrd                             // Complete lattice
+pub trait AbstractDomain : Debug + Display + Copy                  // Utils
+                           + From<Num> + From<Interval> + FromStr  // Conversions
+                           + PartialOrd                            // Complete lattice
                            + Add<Output=Self> + Sub<Output=Self> + Mul<Output=Self> + Div<Output=Self>  {
 
     fn set_config(config_string: Option<String>) -> Result<(), String> {
@@ -72,7 +72,7 @@ pub trait AbstractDomain : Debug + Display + Copy + Sized           // Utils
     }
 
     fn widening(self, other:Self) -> Self {
-        self.lub(other) //Trivial widening (possible infinite ascending chain)
+        self.lub(other) //Trivial impl widening (possible infinite ascending chain)
     }
     fn narrowing(self, _other:Self) -> Self {
         self //Trivial narrowing (no narrowing)
