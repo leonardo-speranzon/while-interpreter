@@ -48,7 +48,9 @@ fn eval_bexpr_dumb<D: AbstractDomain, B: AbstractState<D>> (b: &Bexpr<D>, state:
 
 fn eval_bexpr_h<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B, negated: bool) -> B{
     match b {
+        Bexpr::True if negated => B::bottom(),
         Bexpr::True => state,
+        Bexpr::False if negated => state,
         Bexpr::False => B::bottom(),
         Bexpr::Equal(a1, a2) => {
             let domain = if !negated {
