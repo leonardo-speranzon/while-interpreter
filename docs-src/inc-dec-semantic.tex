@@ -30,11 +30,13 @@ $$
         \mathcal{A}'[\texttt{--}x]s &= \langle s[x\rightarrowtail s\, x -1 ], s\,x -1\rangle \\
     \end{aligned}
 $$
+\newcommand\centerFst[2]{\phantom{#2} \quad #1 \quad #2}
 $$
-\frac
-    {\mathcal{A}'[a_1]s = \langle s', n_1\rangle \quad\quad \mathcal{A}'[a_1]s' = \langle s'', n_2\rangle}
-    {\mathcal{A}'[a_1 \star a_2]s = \langle s'', n_1 \star n_2\rangle} 
-    \qquad \mathrm{where}\quad  \lnot(\star =  /\ \land\  n_2 = 0)
+    \centerFst{
+        \frac
+            {\mathcal{A}'[a_1]s = \langle s', n_1\rangle \quad\quad \mathcal{A}'[a_1]s' = \langle s'', n_2\rangle}
+            {\mathcal{A}'[a_1 \star a_2]s = \langle s'', n_1 \star n_2\rangle}}
+        {\mathrm{where}\quad  \lnot(\star =  /\ \land\  n_2 = 0)}
 $$
 
 \vspace{1em}
