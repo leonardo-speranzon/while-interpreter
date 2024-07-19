@@ -1,4 +1,4 @@
-use std::{fmt::Display, ops::{Add, Div, Mul, Sub}, str::FromStr};
+use std::{cmp::Ordering, fmt::Display, ops::{Add, Div, Mul, Sub}, str::FromStr};
 
 use crate::{analyzer::types::domain::{AbstractDomain, Interval}, types::ast::Num};
 
@@ -62,8 +62,23 @@ impl Div for CongruenceDomain  {
 }
 
 impl PartialOrd for CongruenceDomain{
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        todo!()
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match (self, other) {
+            (CongruenceDomain::Bottom, CongruenceDomain::Bottom) => Some(Ordering::Equal),
+            (CongruenceDomain::Bottom, _) => Some(Ordering::Less),
+            (_, CongruenceDomain::Bottom) => Some(Ordering::Greater),
+            (CongruenceDomain::Congruence { a:a1, b:b1 }, CongruenceDomain::Congruence { a:a2, b:b2 }) => {
+                if a1 == a2 && (b1 - b2) % a1 == 0 {
+                    Some(Ordering::Equal)
+                } else if a1%a2 == 0 && (b1 - b2) % a2 == 0 {
+                    Some(Ordering::Less)
+                } else if a2%a1 == 0 && (b1 - b2) % a1 == 0 {
+                    Some(Ordering::Greater)
+                } else {
+                    None
+                }
+            }
+        }
     }
 }
 
