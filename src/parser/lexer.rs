@@ -86,9 +86,9 @@ impl<'a, N : NumLiteral> MyLexer<'a, N> {
         let start_pos: Option<TokenPosition> = self.chars.peek().map(|(l,c,_)|(l.to_owned(),c.to_owned()));
         let tok = match self.chars.next() {
             // FIXME horrible static pattern matching for dynamic literal
-            Some((_, _, d@('0'..='9' |'['))) => {
+            Some((_, _, d@('0'..='9' | '['))) => {
                 let mut digits = d.to_string();
-                while let Some((_, _, d)) = self.chars.next_if(|(_, _, c)| c.is_ascii_digit() || c == &',' || c == &']'){
+                while let Some((_, _, d)) = self.chars.next_if(|(_, _, c)| c.is_ascii_digit() || c == &',' || c == &'-' || c == &']'){
                     digits.push(d)
                 }
                 match digits.parse() {
