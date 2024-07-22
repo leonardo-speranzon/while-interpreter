@@ -1,0 +1,11 @@
+// Euclidean alg for CGD
+// INPUT: a, b
+// OUTPUT: gcd = gcd(a,b) (= a = b in final state)
+
+while a != b do 
+    if a<=b then 
+        b -= a;
+    else
+        a -= b;
+    
+gcd:=a;

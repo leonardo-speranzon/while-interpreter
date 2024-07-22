@@ -1,0 +1,9 @@
+// FACTORIAL PROGRAM
+// INPUT: x
+// OUTPUT: fact = x!
+
+fact:= 1;
+while x > 0 do {
+    fact*=x;
+    x-=1;
+}

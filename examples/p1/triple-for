@@ -1,0 +1,15 @@
+// EXAMPLE OF THREE NESTED FOR LOOPS
+// OUTPUT: x = n1 * n2 * n3
+
+n1:= 100;
+n2:= 11;
+n3:= 10;
+
+x:=0;
+for (i:=0; i<n1; i+=1){
+    for (j:=0; j<n2; j:=j+1){
+        for (k:=0; k<n3; k+=1){
+            x+=1;
+        }
+    }
+}

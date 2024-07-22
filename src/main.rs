@@ -44,7 +44,7 @@ fn main() {
                 config.init_state.unwrap_or(State::new())
             );
             match final_state {
-                Ok(state) => println!("EVAL STM: {:?}", state),
+                Ok(state) => println!("FINAL STATE: {:?}", state),
                 Err(RuntimeError::VariableNotInitialized(x)) =>
                     println!("Runtime error: variable '{}' used before initialization", x),
                 Err(RuntimeError::NotImplemented(str)) =>
