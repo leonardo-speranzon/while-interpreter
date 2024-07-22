@@ -66,7 +66,7 @@ fn stm_to_program<D: Clone>(stm: Statement<D>) -> Program<D>{
             let p2 = stm_to_program(*s2);
 
             let offset_p1 = if p1.labels_num > 1 { 1 } else { 0 };
-            let offset_p2 = offset_p1 + 1;
+            let offset_p2 = offset_p1 + p1.labels_num;
             let exit_label = offset_p2 + p2.labels_num - 1 ;
             
             let mut arcs = vec![

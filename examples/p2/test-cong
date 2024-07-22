@@ -1,0 +1,10 @@
+// TEST FOR CONGRUENCE DOMAIN
+// EXPECTED OUTPUT: X=2Z+0, Y=6Z+2 
+
+x:= 0;
+y:= 2;
+while x < 40 do{ 
+	x += 2;
+	if x < 5 then y+= 18; else skip;
+	if x > 8 then y-= 30; else skip;
+}

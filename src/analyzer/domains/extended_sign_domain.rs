@@ -67,7 +67,9 @@ impl From<Interval> for ExtendedSignDomain {
             Interval::Closed(min, max) => {
                 if min == 0 && max == 0 { Self{positive:false,zero:true,negative:false} }
                 else if min == 0 {Self{positive:true,zero:true,negative:false}}
+                else if min > 0 {Self{positive:true,zero:false,negative:false}}
                 else if max == 0 {Self{positive:false,zero:true,negative:true}}
+                else if max < 0 {Self{positive:false,zero:false,negative:true}}
                 else {Self{positive:true,zero:true,negative:true}}
             },
         }

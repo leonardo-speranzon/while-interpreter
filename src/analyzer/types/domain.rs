@@ -4,6 +4,7 @@ use std::str::FromStr;
 use crate::types::ast::{Num, Operator};
 use crate::types::lit_interval::LitInterval;
 
+#[derive(Debug)]
 pub enum Interval {
     OpenLeft (Num),
     OpenRight (Num),
@@ -12,6 +13,15 @@ pub enum Interval {
 impl From<LitInterval> for Interval {
     fn from(value: LitInterval) -> Self {
         Self::Closed(value.0, value.1)
+    }
+}
+impl Display for Interval {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Interval::OpenLeft(u) => write!(f, "(-inf,{u}]"),
+            Interval::OpenRight(l) => write!(f, "[{l},+inf)"),
+            Interval::Closed(l,u) => write!(f, "[{l},{u}]"),
+        }
     }
 }
 

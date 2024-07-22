@@ -131,9 +131,8 @@ impl Display for CongruenceDomain{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self{
             CongruenceDomain::Bottom => write!(f, "⊥"),
-            CongruenceDomain::Congruence { a, b } => write!(f, "{}ℤ+{}",a,b),
+            CongruenceDomain::Congruence { a, b } => write!(f, "{}ℤ+{}",a, if *a == 0 {*b} else {b.rem_euclid(*a)}),
         }
-        
     }
 }
 
@@ -166,6 +165,8 @@ impl AbstractDomain for CongruenceDomain{
     fn glb(self, other: Self) -> Self {
         match (self,other) {
             (CongruenceDomain::Bottom, _) | (_, CongruenceDomain::Bottom)  => CongruenceDomain::Bottom,
+            (CongruenceDomain::Congruence { a:1, b:_ }, cong) | (cong, CongruenceDomain::Congruence { a:1, b:_ })  
+                => cong,
             (CongruenceDomain::Congruence { a: a1, b: b1 }, CongruenceDomain::Congruence { a: a2, b: b2 }) => {
                     let gcd = extended_euclidean_algorithm(a1, a2).0;
 
