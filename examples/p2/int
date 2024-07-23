@@ -1,0 +1,9 @@
+// NOT DETERMINISTIC
+// INPUTS: 
+// OUTPUTS: x
+
+x:=0;
+while x++ <= 100 do {
+	while x >= 20 and x <= 50 do x-=1;
+}
+

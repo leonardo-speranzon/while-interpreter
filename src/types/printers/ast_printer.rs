@@ -16,7 +16,7 @@ impl Display for PrePostOp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             PrePostOp::Inc => write!(f, "++"),
-            PrePostOp::Dec => write!(f, "++"),
+            PrePostOp::Dec => write!(f, "--"),
         }
     }
 }
@@ -42,7 +42,7 @@ impl<N: Display> Display for Bexpr<N> {
             Bexpr::False => 
                 write!(f, "false"),
             Bexpr::Equal(a1, a2) => 
-                write!(f, "({} = {})", a1, a2),
+                write!(f, "({} == {})", a1, a2),
             Bexpr::LessEq(a1, a2) => 
                 write!(f, "({} <= {})", a1, a2),
             Bexpr::Not(b) =>

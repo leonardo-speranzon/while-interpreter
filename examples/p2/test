@@ -1,0 +1,33 @@
+// NOT DETERMINISTIC
+// INPUTS: 
+// OUTPUTS: x
+
+// CASE 1: advanced test
+// Concrete: 1
+// Interval: does not comprehend since (,-1] U [1,) => T
+// Extended Sign: x: >0
+a:=0;
+x:= 0;
+if a == a then x:=1;
+else x:=-1;
+
+
+// CASE 2: dumb case that does not been comprehend
+// Concrete: y = 1
+// Interval: [-1,1]
+// Extended Sign: !=0
+a:=0;
+y:= 0;
+if a == a++ then y:=1;
+else y:=-1;
+
+
+// CASE 3: dumb case that is been comprehend
+// Concrete: -1
+// Interval: [-1,-1]
+// Extended Sign: <0
+a:=0;
+z:= 0;
+if a == --a then z:=1;
+else z:=-1;
+
