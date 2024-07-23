@@ -12,47 +12,47 @@ pub struct GenericAnalyzer<D, B> {
    abs_state: PhantomData<B>,
 }
 
-impl<D: AbstractDomain, B: AbstractState<D>> StaticAnalyzer<D,B> for GenericAnalyzer<D,B>{
+impl<B: AbstractDomain, D: AbstractState<B>> StaticAnalyzer<B,D> for GenericAnalyzer<B,D>{
     
-    fn eval_aexpr(a: &Aexpr<D>, mut s: B)-> (D, B) {
+    fn eval_aexpr(a: &Aexpr<B>, mut s: D)-> (B, D) {
         match a {
             Aexpr::Lit(n) => (*n, s),
             Aexpr::Var(x) => (s.get(x), s),
             Aexpr::BinOp(op, a1, a2 ) => {
                 let (n1, s1) = Self::eval_aexpr(a1, s);
                 let (n2, s2) = Self::eval_aexpr(a2, s1);
-                let d = D::abstract_operator(op, n1, n2);
+                let d = B::abstract_operator(op, n1, n2);
                 (d, s2)
             }
             Aexpr::PreOp(PreOp::Inc, x) => {
-                let d = s.get(x) + D::from(1);
+                let d = s.get(x) + B::from(1);
                 s.set(x.to_string(), d);
                 (d, s)
             }
             Aexpr::PreOp(PreOp::Dec, x) => {
-                let d = s.get(x) - D::from(1);
+                let d = s.get(x) - B::from(1);
                 s.set(x.to_string(), d);
                 (d, s)
             },
             Aexpr::PostOp(PostOp::Inc, x) => {
                 let d = s.get(x);
-                s.set(x.to_string(), d + D::from(1));
+                s.set(x.to_string(), d + B::from(1));
                 (d, s)
             },
             Aexpr::PostOp(PostOp::Dec, x) =>{
                 let d = s.get(x);
-                s.set(x.to_string(), d - D::from(1));
+                s.set(x.to_string(), d - B::from(1));
                 (d, s)
             },
         }
     }
 
-    fn eval_bexpr(b: &Bexpr<D>, s: B)-> B {
+    fn eval_bexpr(b: &Bexpr<B>, s: D)-> D {
         advanced_tests::eval_bexpr(b, s)
     }
 
-    fn analyze(prog: Program<D>, init_state: B, iteration_strategy: IterationStrategy) -> HashMap<Label, B> {
-        let mut all_state: HashMap<Label, B> = HashMap::new();
+    fn analyze(prog: Program<B>, init_state: D, iteration_strategy: IterationStrategy) -> HashMap<Label, D> {
+        let mut all_state: HashMap<Label, D> = HashMap::new();
 
 
         for i in 0..prog.labels_num {

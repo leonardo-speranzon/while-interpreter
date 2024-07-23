@@ -3,24 +3,24 @@ use iter_tools::Itertools;
 use crate::types::ast::{Statement, Aexpr, Var, Bexpr};
 
 #[derive(Debug, Clone)]
-pub struct Program<D: Clone> {
+pub struct Program<B: Clone> {
     // entry is the first, exit the last
     pub labels_num: Label,
     pub widening_points: Vec<Label>,
-    pub arcs: Vec<Arc<D>>
+    pub arcs: Vec<Arc<B>>
 }
 
 pub type Label = u32;
-pub type Arc<D> = (Label, Command<D>, Label);
+pub type Arc<B> = (Label, Command<B>, Label);
 
 #[derive(Debug, Clone)]
-pub enum Command<D> {
-    Assignment(Var, Aexpr<D>),
-    Test(Bexpr<D>),
+pub enum Command<B> {
+    Assignment(Var, Aexpr<B>),
+    Test(Bexpr<B>),
 }
 
-impl<D: Clone> Program<D>{
-    pub fn new(arcs: Vec<(Label, Command<D>, Label)>, widening_points: Vec<Label>) -> Self {
+impl<B: Clone> Program<B>{
+    pub fn new(arcs: Vec<(Label, Command<B>, Label)>, widening_points: Vec<Label>) -> Self {
         let max_label = (&arcs)
             .into_iter()
             .map(|(l1,_,l2)| max(l1,l2))
@@ -35,19 +35,19 @@ impl<D: Clone> Program<D>{
     }
     
 
-    pub fn get_entering_arcs(self: &Self, label: Label) -> Vec<&Arc<D>>{
+    pub fn get_entering_arcs(self: &Self, label: Label) -> Vec<&Arc<B>>{
         self.arcs.iter().filter(|(_,_,l)|l==&label).collect()
     }
 }
 
-impl<D: Clone> From<Statement<D>> for Program<D>{
-    fn from(value: Statement<D>) -> Self {
+impl<B: Clone> From<Statement<B>> for Program<B>{
+    fn from(value: Statement<B>) -> Self {
         stm_to_program(value)
     }
 }
 
 
-fn stm_to_program<D: Clone>(stm: Statement<D>) -> Program<D>{
+fn stm_to_program<B: Clone>(stm: Statement<B>) -> Program<B>{
     match stm {
         Statement::Assign(x, a) => 
             Program::new(vec![(0,Command::Assignment(x,*a),1)], vec![]),
@@ -56,7 +56,7 @@ fn stm_to_program<D: Clone>(stm: Statement<D>) -> Program<D>{
             let mut p1 = stm_to_program(*s1);
             let p2 = stm_to_program(*s2);
             let offset = p1.labels_num - 1;
-            let mut arcs2: Vec<Arc<D>> = shift_arcs(p2.arcs.clone(), offset,p2.labels_num-1,p2.labels_num-1+offset);
+            let mut arcs2: Vec<Arc<B>> = shift_arcs(p2.arcs.clone(), offset,p2.labels_num-1,p2.labels_num-1+offset);
             arcs2.append(&mut p1.arcs);
             let widening_points = [p1.widening_points, p2.widening_points.iter().map(|x|x+offset).collect_vec()].concat();
             Program::new(arcs2, widening_points)
@@ -73,8 +73,8 @@ fn stm_to_program<D: Clone>(stm: Statement<D>) -> Program<D>{
                 (0,Command::Test(*b.clone()),if p1.labels_num > 1 { 1 } else { exit_label }),
                 (0,Command::Test(Bexpr::Not(b)), offset_p2)
             ];
-            let mut p1_arcs: Vec<Arc<D>> = shift_arcs(p1.arcs.clone(), offset_p1,p1.labels_num-1,exit_label);
-            let mut p2_arcs: Vec<Arc<D>> = shift_arcs(p2.arcs.clone(), offset_p2,p2.labels_num-1,exit_label);
+            let mut p1_arcs: Vec<Arc<B>> = shift_arcs(p1.arcs.clone(), offset_p1,p1.labels_num-1,exit_label);
+            let mut p2_arcs: Vec<Arc<B>> = shift_arcs(p2.arcs.clone(), offset_p2,p2.labels_num-1,exit_label);
             arcs.append(&mut p1_arcs);
             arcs.append(&mut p2_arcs);
 
@@ -92,7 +92,7 @@ fn stm_to_program<D: Clone>(stm: Statement<D>) -> Program<D>{
                 (0,Command::Test(*b.clone()), if p1.labels_num == 1 { 0 } else { 1 }),
                 (0,Command::Test(Bexpr::Not(b)), exit_label)
             ];
-            let mut p1_arcs: Vec<Arc<D>> = shift_arcs(p1.arcs.clone(), offset,p1.labels_num-1,0);
+            let mut p1_arcs: Vec<Arc<B>> = shift_arcs(p1.arcs.clone(), offset,p1.labels_num-1,0);
             arcs.append(&mut p1_arcs);
 
             let widening_points = [
@@ -104,7 +104,7 @@ fn stm_to_program<D: Clone>(stm: Statement<D>) -> Program<D>{
     }
 }
 
-fn shift_arcs<D>(arcs: Vec<Arc<D>>, offset: Label, old_exit: Label, new_exit: Label) -> Vec<Arc<D>>{
+fn shift_arcs<B>(arcs: Vec<Arc<B>>, offset: Label, old_exit: Label, new_exit: Label) -> Vec<Arc<B>>{
     arcs.into_iter()
     .map(|(l1,c,l2)|{
         if l2 == old_exit {

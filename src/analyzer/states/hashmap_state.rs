@@ -7,9 +7,9 @@ use crate::{analyzer::types::{domain::AbstractDomain, state::AbstractState}, int
 
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct HashMapState<D>(pub Option<State<D>>);
+pub struct HashMapState<B>(pub Option<State<B>>);
 
-impl<D: AbstractDomain> AbstractState<D> for HashMapState<D>  {
+impl<B: AbstractDomain> AbstractState<B> for HashMapState<B>  {
     fn bottom() -> Self{
         HashMapState(None)
     }
@@ -42,7 +42,7 @@ impl<D: AbstractDomain> AbstractState<D> for HashMapState<D>  {
                         Some(d) => v.glb(d.clone()),
                         None => v.clone(),
                     };
-                    if new_v == D::bottom(){
+                    if new_v == B::bottom(){
                         return HashMapState(None)
                     }
                     s1.insert(k.to_string(), new_v);
@@ -52,21 +52,21 @@ impl<D: AbstractDomain> AbstractState<D> for HashMapState<D>  {
             (_,_) => HashMapState(None)
         }
     }
-    fn get(&self, k: &str) -> D {
+    fn get(&self, k: &str) -> B {
         match self {
             HashMapState(Some(s)) => {
                 match s.get(k) {
                     Some(n) => n.clone(),
-                    None => D::top(),
+                    None => B::top(),
                 }
             },
-            HashMapState(None) =>  D::bottom(),
+            HashMapState(None) =>  B::bottom(),
         }
     }
-    fn set(&mut self, k: String, v: D) {
+    fn set(&mut self, k: String, v: B) {
         match self {
             HashMapState(Some(s)) => {
-                if v == D::bottom() {
+                if v == B::bottom() {
                     self.0 = None
                 }else {
                     s.insert(k, v);
@@ -109,7 +109,7 @@ impl<D: AbstractDomain> AbstractState<D> for HashMapState<D>  {
     
 }
 
-impl<D: AbstractDomain> PartialOrd for HashMapState<D> {
+impl<B: AbstractDomain> PartialOrd for HashMapState<B> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match (&self.0, &other.0) {
             (None, None) => Some(Ordering::Equal),
@@ -119,7 +119,7 @@ impl<D: AbstractDomain> PartialOrd for HashMapState<D> {
                 let mut ord_candidate: Option<Ordering> = None;
                 let all_keys = s1.keys().chain(s2.keys()).collect::<HashSet<_>>();
                 for k in all_keys {
-                    let top = D::top();
+                    let top = B::top();
                     let v1 = s1.get(k).unwrap_or(&top);
                     let v2 = s2.get(k).unwrap_or(&top);
 
@@ -136,7 +136,7 @@ impl<D: AbstractDomain> PartialOrd for HashMapState<D> {
     }
 }
 
-impl<D:AbstractDomain> FromStr for HashMapState<D> {
+impl<B:AbstractDomain> FromStr for HashMapState<B> {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -145,7 +145,7 @@ impl<D:AbstractDomain> FromStr for HashMapState<D> {
             .map(|pair_str|{
                 match pair_str.split_once(':'){
                     Some((var,val)) => {
-                        match val.parse::<D>() {
+                        match val.parse::<B>() {
                             Ok(n) => Ok((var.to_string(), n)),
                             Err(_) => Err(format!("Wrong format of state pair, expected '<var-name>:<value>' but found '{pair_str}'")),
                         }                                    
@@ -157,7 +157,7 @@ impl<D:AbstractDomain> FromStr for HashMapState<D> {
     }
 }
 
-impl<D: Display> Display for HashMapState<D> {
+impl<B: Display> Display for HashMapState<B> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.0 {
             Some(s) => {

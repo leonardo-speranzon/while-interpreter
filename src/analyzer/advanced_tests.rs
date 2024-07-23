@@ -5,7 +5,7 @@ use crate::types::ast::{Aexpr, Bexpr, Operator, Var};
 use super::{analyzers::generic_analyzer::GenericAnalyzer, types::{analyzer::StaticAnalyzer, domain::{AbstractDomain, Interval}, state::AbstractState}};
 
 
-pub fn eval_bexpr<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B) -> B {
+pub fn eval_bexpr<B: AbstractDomain, D: AbstractState<B>>(b: &Bexpr<B>, state: D) -> D {
     if include_critical_ops(&b) {
         return eval_bexpr_dumb(b, state)
     }
@@ -22,15 +22,15 @@ pub fn eval_bexpr<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B
 }
 
 // In the case where advance abstract test cannot be used it fallback to this
-fn eval_bexpr_dumb<D: AbstractDomain, B: AbstractState<D>> (b: &Bexpr<D>, state: B) -> B {
+fn eval_bexpr_dumb<B: AbstractDomain, D: AbstractState<B>> (b: &Bexpr<B>, state: D) -> D {
     match b {
         Bexpr::True => state,
-        Bexpr::False => B::bottom(),
+        Bexpr::False => D::bottom(),
         Bexpr::Equal(a1, a2) => {
             let (d1, state) = GenericAnalyzer::eval_aexpr(a1, state);
             let (d2, state) = GenericAnalyzer::eval_aexpr(a2, state);
-            if d1.glb(d2) == D::bottom() {
-                B::bottom()
+            if d1.glb(d2) == B::bottom() {
+                D::bottom()
             } else {
                 state
             }
@@ -46,25 +46,25 @@ fn eval_bexpr_dumb<D: AbstractDomain, B: AbstractState<D>> (b: &Bexpr<D>, state:
 }
 
 
-fn eval_bexpr_h<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B, negated: bool) -> B{
+fn eval_bexpr_h<B: AbstractDomain, D: AbstractState<B>>(b: &Bexpr<B>, state: D, negated: bool) -> D{
     match b {
-        Bexpr::True if negated => B::bottom(),
+        Bexpr::True if negated => D::bottom(),
         Bexpr::True => state,
         Bexpr::False if negated => state,
-        Bexpr::False => B::bottom(),
+        Bexpr::False => D::bottom(),
         Bexpr::Equal(a1, a2) => {
             let domain = if !negated {
-                D::from(0) // == 0
+                B::from(0) // == 0
             } else {
-                D::from(Interval::OpenLeft(-1)).lub(D::from(Interval::OpenRight(1))) // != 0
+                B::from(Interval::OpenLeft(-1)).lub(B::from(Interval::OpenRight(1))) // != 0
             };
             advanced_abstract_tests(a1, a2, state, domain)
         },
         Bexpr::LessEq(a1, a2) => {
             let domain = if !negated {
-                D::from(Interval::OpenLeft(0)) // <= 0
+                B::from(Interval::OpenLeft(0)) // <= 0
             } else {
-                D::from(Interval::OpenRight(1)) // > 0
+                B::from(Interval::OpenRight(1)) // > 0
             };
             advanced_abstract_tests(a1, a2, state, domain)
         },
@@ -82,7 +82,7 @@ fn eval_bexpr_h<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B, 
 }
 
 // Advanced test on: a1 - a2 \in domain
-fn advanced_abstract_tests<D: AbstractDomain, B: AbstractState<D>>(a1: &Aexpr<D>, a2: &Aexpr<D>, state: B, domain: D) -> B {
+fn advanced_abstract_tests<B: AbstractDomain, D: AbstractState<B>>(a1: &Aexpr<B>, a2: &Aexpr<B>, state: D, domain: B) -> D {
     // This logic worked only because in all the implemented abstract domains
     // the representation of zero is optimal but is not strictly needed  in these
     // specific cases
@@ -92,19 +92,19 @@ fn advanced_abstract_tests<D: AbstractDomain, B: AbstractState<D>>(a1: &Aexpr<D>
     // };
     let a = Aexpr::BinOp(Operator::Sub, Box::new(a1.clone()), Box::new(a2.clone()));
     let eval_tree = eval_aexpr_tree(&a, &state);
-    let state: B = refine(&eval_tree, state, domain);
+    let state: D = refine(&eval_tree, state, domain);
     state
 }
 
 
 #[derive(Debug)]
-enum EvalTree<D: AbstractDomain>{
-    LeafNum(D),
-    LeafVar(String,D),
-    BinOp(Operator, D, Box<EvalTree<D>>, Box<EvalTree<D>>)
+enum EvalTree<B: AbstractDomain>{
+    LeafNum(B),
+    LeafVar(String,B),
+    BinOp(Operator, B, Box<EvalTree<B>>, Box<EvalTree<B>>)
 }
-impl<D:AbstractDomain> EvalTree<D> {
-    fn get_domain(&self)-> D{
+impl<B:AbstractDomain> EvalTree<B> {
+    fn get_domain(&self)-> B{
         match self{
             EvalTree::LeafNum(d) => *d,
             EvalTree::LeafVar(_, d) => *d,
@@ -112,7 +112,7 @@ impl<D:AbstractDomain> EvalTree<D> {
         }
     }
 }
-fn eval_aexpr_tree<D: AbstractDomain, B: AbstractState<D>>(a: &Aexpr<D>, state: &B) -> EvalTree<D> {
+fn eval_aexpr_tree<B: AbstractDomain, D: AbstractState<B>>(a: &Aexpr<B>, state: &D) -> EvalTree<B> {
     match a {
         Aexpr::Lit(n) => EvalTree::LeafNum(*n),
         Aexpr::Var(x) => EvalTree::LeafVar(x.clone(), state.get(x)),
@@ -122,14 +122,14 @@ fn eval_aexpr_tree<D: AbstractDomain, B: AbstractState<D>>(a: &Aexpr<D>, state: 
             let t2 = eval_aexpr_tree(a2, state);
             EvalTree::BinOp(
                 op.clone(), 
-                D::abstract_operator(op, t1.get_domain(), t2.get_domain()),
+                B::abstract_operator(op, t1.get_domain(), t2.get_domain()),
                 Box::new(t1),
                 Box::new(t2)
             )        
         }
     }    
 }
-fn refine<D: AbstractDomain, B: AbstractState<D>>(tree: &EvalTree<D>, mut state: B, target_domain: D) -> B {
+fn refine<B: AbstractDomain, D: AbstractState<B>>(tree: &EvalTree<B>, mut state: D, target_domain: B) -> D {
     match tree {
         EvalTree::LeafNum(_) => state,
         EvalTree::LeafVar(x, _) => {
@@ -137,7 +137,7 @@ fn refine<D: AbstractDomain, B: AbstractState<D>>(tree: &EvalTree<D>, mut state:
             state
         }
         EvalTree::BinOp(op, _, lhs, rhs) => {
-            let (l_dom,r_dom) = D::backward_abstract_operator(
+            let (l_dom,r_dom) = B::backward_abstract_operator(
                 op,
                 lhs.get_domain(), 
                 rhs.get_domain(), 
@@ -151,7 +151,7 @@ fn refine<D: AbstractDomain, B: AbstractState<D>>(tree: &EvalTree<D>, mut state:
 }
 
 
-fn eval_pre_b<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B) -> B {
+fn eval_pre_b<B: AbstractDomain, D: AbstractState<B>>(b: &Bexpr<B>, state: D) -> D {
     match b{
         Bexpr::True | Bexpr::False => state,
         Bexpr::Equal(a1, a2) | Bexpr::LessEq(a1, a2) => {
@@ -167,7 +167,7 @@ fn eval_pre_b<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B) ->
         },
     }
 }
-fn eval_pre_a<D: AbstractDomain, B: AbstractState<D>>(a: &Aexpr<D>, state: B) -> B {
+fn eval_pre_a<B: AbstractDomain, D: AbstractState<B>>(a: &Aexpr<B>, state: D) -> D {
     match a{
         Aexpr::PreOp(_, _) => GenericAnalyzer::eval_aexpr(a, state).1,
         Aexpr::BinOp(_, a1, a2) => {
@@ -180,7 +180,7 @@ fn eval_pre_a<D: AbstractDomain, B: AbstractState<D>>(a: &Aexpr<D>, state: B) ->
 }
 
 
-fn eval_post_b<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B) -> B {
+fn eval_post_b<B: AbstractDomain, D: AbstractState<B>>(b: &Bexpr<B>, state: D) -> D {
     match b{
         Bexpr::True | Bexpr::False => state,
         Bexpr::Equal(a1, a2) | Bexpr::LessEq(a1, a2) => {
@@ -196,7 +196,7 @@ fn eval_post_b<D: AbstractDomain, B: AbstractState<D>>(b: &Bexpr<D>, state: B) -
         },
     }
 }
-fn eval_post_a<D: AbstractDomain, B: AbstractState<D>>(a: &Aexpr<D>, state: B) -> B {
+fn eval_post_a<B: AbstractDomain, D: AbstractState<B>>(a: &Aexpr<B>, state: D) -> D {
     match a{
         Aexpr::PostOp(_, _) => GenericAnalyzer::eval_aexpr(a, state).1,
         Aexpr::BinOp(_, a1, a2) => {
@@ -218,7 +218,7 @@ fn eval_post_a<D: AbstractDomain, B: AbstractState<D>>(a: &Aexpr<D>, state: B) -
  * - Single appearance of vars which have an inc/dec
  * 
  */
-fn include_critical_ops<D: AbstractDomain>(b: &Bexpr<D>) -> bool {
+fn include_critical_ops<B: AbstractDomain>(b: &Bexpr<B>) -> bool {
     if let Err(_) = check_no_dup_b(b){
         return true
     }
@@ -234,7 +234,7 @@ fn include_critical_ops<D: AbstractDomain>(b: &Bexpr<D>) -> bool {
  *          ops = variable affected by post inc dec
  * 
  */
-fn check_no_dup_b <D: AbstractDomain>(b: &Bexpr<D>) -> Result<(BTreeSet<Var>, BTreeSet<Var>),Var> {
+fn check_no_dup_b <B: AbstractDomain>(b: &Bexpr<B>) -> Result<(BTreeSet<Var>, BTreeSet<Var>),Var> {
     match b {
         Bexpr::True => Ok((BTreeSet::new(), BTreeSet::new())),
         Bexpr::False => Ok((BTreeSet::new(), BTreeSet::new())),
@@ -252,7 +252,7 @@ fn check_no_dup_b <D: AbstractDomain>(b: &Bexpr<D>) -> Result<(BTreeSet<Var>, BT
     }
 }
 
-fn check_no_dup_a <D: AbstractDomain>(a: &Aexpr<D>) -> Result<(BTreeSet<Var>, BTreeSet<Var>),Var> {
+fn check_no_dup_a <B: AbstractDomain>(a: &Aexpr<B>) -> Result<(BTreeSet<Var>, BTreeSet<Var>),Var> {
     match a {
         Aexpr::Lit(_) => Ok((BTreeSet::new(), BTreeSet::new())),
         Aexpr::Var(x) => Ok((BTreeSet::from([x.clone()]), BTreeSet::new())),
